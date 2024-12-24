@@ -1,6 +1,7 @@
 const path = require("path");
 const { createLogger, format, transports } = require("winston");
 const DailyRotateFile = require("winston-daily-rotate-file");
+const chalk = require("chalk");
 
 const { combine, timestamp, label, printf } = format;
 
@@ -12,17 +13,22 @@ const myFormat = printf(({ level, message, label, timestamp }) => {
   const seconds = date.getSeconds();
 
   let emoji = "";
+  let levelColor = chalk.white;
   if (level === "info") {
     emoji = "📣";
+    levelColor = chalk.blue;
   } else if (level === "warn") {
     emoji = "⚠️";
+    levelColor = chalk.yellow;
   } else if (level === "error") {
     emoji = "❌";
+    levelColor = chalk.red;
   } else if (level === "debug") {
     emoji = "🛠️";
+    levelColor = chalk.green;
   }
 
-  return `${date.toDateString()} ${hour}:${minutes}:${seconds} [${label}] ${level.toUpperCase()} ${emoji}: ${message}`;
+  return `${date.toDateString()} ${hour}:${minutes}:${seconds} [${label}] ${levelColor(level.toUpperCase())} ${emoji}: ${chalk.white(message)}`;
 });
 
 const logger = createLogger({

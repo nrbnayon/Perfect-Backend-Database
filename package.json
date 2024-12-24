@@ -11,7 +11,11 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write ."
   },
-  "keywords": ["mvc", "api", "backend"],
+  "keywords": [
+    "mvc",
+    "api",
+    "backend"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -19,6 +23,7 @@
     "axios": "^1.6.7",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.20.2",
+    "chalk": "^5.4.1",
     "cloudinary": "^2.0.3",
     "compression": "^1.7.4",
     "cookie-parser": "^1.4.6",
@@ -34,6 +39,7 @@
     "helmet": "^7.1.0",
     "http-status": "^1.7.4",
     "joi": "^17.12.2",
+    "js-xlsx": "^0.8.22",
     "jsonwebtoken": "^9.0.2",
     "moment": "^2.30.1",
     "moment-timezone": "^0.5.45",
@@ -53,9 +59,10 @@
     "socket.io": "^4.7.4",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.0",
+    "util": "^0.12.5",
     "validator": "^13.11.0",
     "winston": "^3.12.0",
-    "xlsx": "^0.18.5",
+    "winston-daily-rotate-file": "^5.0.0",
     "xss-clean": "^0.1.4"
   },
   "devDependencies": {
