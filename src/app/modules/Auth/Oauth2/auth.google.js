@@ -1,7 +1,7 @@
 /* eslint-disable node/no-extraneous-require */
 const passport = require("passport");
-const UserModel = require("../users/user.model");
 const config = require("../../../../config/config");
+const UserModel = require("../../user/user.model");
 
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 

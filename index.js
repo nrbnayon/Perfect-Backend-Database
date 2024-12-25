@@ -17,7 +17,9 @@ const corsOptions = createCorsOptions(allowedOrigins);
 
 app.use(cors(corsOptions));
 // app.use(fileUpload());
-app.use(express.json({ limit: "100mb" }));
+// app.use(express.json({ limit: "100mb" }));
+app.use(express.json());
+
 app.use(express.urlencoded({ extended: true, limit: "100mb" }));
 app.use(bodyParser.json());
 app.use(cookieParser());

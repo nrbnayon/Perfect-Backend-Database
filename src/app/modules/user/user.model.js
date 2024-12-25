@@ -1,3 +1,4 @@
+// user.model.js
 const mongoose = require("mongoose");
 const validator = require("validator");
 const userModel = mongoose.Schema(
@@ -24,7 +25,7 @@ const userModel = mongoose.Schema(
     },
     phone: {
       type: String,
-      length: [11, "Phone number must be 11 digits"],
+      // length: [11, "Phone number must be 11 digits"],
       trim: true,
     },
     phoneVerify: {

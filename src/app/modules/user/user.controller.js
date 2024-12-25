@@ -4,10 +4,11 @@ const userServices = require("./user.services");
 const catchAsyncError = require("../../../ErrorHandler/catchAsyncError");
 const sendResponse = require("../../../shared/sendResponse");
 const config = require("../../../config/config");
+const ConsoleLog = require("../../../utility/consoleLog");
 
-const checkUserExistusingPhone = catchAsyncError(async (req, res) => {
-  const { phone } = req.body;
-  const result = await userServices.getUserUsingPhoneFromDB(phone);
+const checkUserExistusingEmail = catchAsyncError(async (req, res) => {
+  const { email } = req.body;
+  const result = await userServices.getUserUsingEmailFromDB(email);
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -17,10 +18,10 @@ const checkUserExistusingPhone = catchAsyncError(async (req, res) => {
   });
 });
 
-const loginUserUsingPhoneAndPassword = catchAsyncError(async (req, res) => {
-  const { phone, password } = req.body;
+const loginUserUsingEmailAndPassword = catchAsyncError(async (req, res) => {
+  const { email, password } = req.body;
 
-  const result = await userServices.loginUserInToDB({ phone, password });
+  const result = await userServices.loginUserInToDB({ email, password });
   const { accessToken, refreshToken, userData } = result;
 
   if (accessToken && refreshToken && userData) {
@@ -45,6 +46,10 @@ const loginUserUsingPhoneAndPassword = catchAsyncError(async (req, res) => {
 });
 
 const createUser = catchAsyncError(async (req, res) => {
+  ConsoleLog(
+    "🚀 ~ file: user.controller.js ~ line 49 ~ createUser ~ payload",
+    req.body
+  );
   const result = await userServices.createUserIntoDB(req.body);
   const { userData, accessToken, refreshToken } = result;
 
@@ -70,10 +75,10 @@ const createUser = catchAsyncError(async (req, res) => {
 });
 
 const forgotPassword = catchAsyncError(async (req, res) => {
-  const { phone, newPassword } = req.body;
+  const { email, newPassword } = req.body;
 
   const result = await userServices.updateUserPassword({
-    phone,
+    email,
     password: newPassword,
   });
 
@@ -152,8 +157,8 @@ const logout = catchAsyncError(async (req, res) => {
 });
 
 const userController = {
-  checkUserExistusingPhone,
-  loginUserUsingPhoneAndPassword,
+  checkUserExistusingEmail,
+  loginUserUsingEmailAndPassword,
   updateUserProfile,
   createUser,
   getSignUpUserNumber,

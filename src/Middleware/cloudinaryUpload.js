@@ -8,20 +8,25 @@ const uploadToCloudinary = async (file, folder = "") => {
     try {
       const options = folder ? { folder } : {};
 
-      cloudinary.uploader.upload(file.path, options, (error, result) => {
-        fs.unlinkSync(file.path);
-        if (error) {
-       
+      cloudinary.uploader.upload(file.path, options, async (error, result) => {
+        try {
+          // Remove the file from local storage after uploading
+          await fs.promises.unlink(file.path);
 
-          reject(error);
-        } else {
-          resolve(result);
+          if (error) {
+            reject(error);
+          } else {
+            resolve(result);
+          }
+        } catch (unlinkError) {
+          // Handle the unlink error if any
+          reject(new ErrorHandler(unlinkError, 500));
         }
       });
     } catch (error) {
-      throw new ErrorHandler(error, 500);
+      // Handle any other errors
+      reject(new ErrorHandler(error, 500));
     }
-    // Construct the folder path in Cloudinary if a folder is provided
   });
 };
 

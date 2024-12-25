@@ -1,3 +1,4 @@
+// user.validation.js
 const Joi = require("joi");
 const bangladeshiPhoneNumberRegex = /^(?:\+88|88)?01[3-9]\d{8}$/;
 const loginSchema = Joi.object({
@@ -54,11 +55,13 @@ const otpVarificationSchema = Joi.object({
     "any.required": "otpCode is required",
   }),
 });
+
 const userCreateSchema = Joi.object({
-  verifiedphone: Joi.string()
+  phone: Joi.string()
     .trim()
-    .required()
+    // .required()
     .custom((value, helpers) => {
+      console.log("Phone Value:", value); // Log the phone value for debugging
       if (bangladeshiPhoneNumberRegex.test(value) && value.length === 11) {
         return value;
       } else {
@@ -72,25 +75,29 @@ const userCreateSchema = Joi.object({
     "string.empty": "firstname is required",
     "any.required": "firstname is required",
   }),
+
   lastname: Joi.string().required().messages({
     "string.empty": "lastname is required",
     "any.required": "lastname is required",
   }),
+
   email: Joi.string().required().messages({
     "string.empty": "Email is required",
     "any.required": "Email is required",
   }),
+
   password: Joi.string().required().messages({
     "string.empty": "Password is required",
     "any.required": "Password is required",
   }),
+
   phoneVerify: Joi.boolean().messages({}),
   emailVerify: Joi.boolean().messages({}),
   userStatus: Joi.string().messages({}),
   role: Joi.string().messages({}),
 });
 
-const phoneOTPVarificationSchema = Joi.object({
+const gmailOTPVarificationSchema = Joi.object({
   otpType: Joi.string().required().messages({
     "any.required": "OTP type is required.",
     "string.empty": "OTP type cannot be empty.",
@@ -137,7 +144,7 @@ const JoiUserValidationSchema = {
   otpVarificationSchema,
   userCreateSchema,
   phoneNumberRequiredSchema,
-  phoneOTPVarificationSchema,
+  gmailOTPVarificationSchema,
   resetPasswordSchema,
 };
 

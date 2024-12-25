@@ -1,5 +1,5 @@
 const httpStatus = require("http-status");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");
 
 const UserModel = require("./user.model");
@@ -7,6 +7,7 @@ const JoiUserValidationSchema = require("./user.validation");
 const jwtHandle = require("../../../shared/createToken");
 const config = require("../../../config/config");
 const ErrorHandler = require("../../../ErrorHandler/errorHandler");
+const ConsoleLog = require("../../../utility/consoleLog");
 
 const getUserUsingPhoneFromDB = async (phone) => {
   const isExist = await UserModel.findOne({ phone: phone });
@@ -80,6 +81,10 @@ const loginUserInToDB = async (payload) => {
 };
 
 const createUserIntoDB = async (payload) => {
+  ConsoleLog(
+    "🚀 ~ file: user.services.js ~ line 68 ~ createUserIntoDB ~ payload",
+    payload
+  );
   const { phone, email } = payload;
 
   const isExist = await UserModel.findOne({ $or: [{ phone }, { email }] });
@@ -94,19 +99,19 @@ const createUserIntoDB = async (payload) => {
   const hashPassword = await bcrypt.hash(payload.password, 10);
 
   payload.password = hashPassword;
-  payload.phoneVerify = true;
+  payload.phoneEmail = true;
 
   const newUser = new UserModel(payload);
   const userData = await newUser.save();
 
   const accessToken = await jwtHandle(
-    { _id: userData._id, phone: userData.phone },
+    { _id: userData._id, phone: userData.email },
     config.jwt_key,
     config.jwt_token_expire
   );
 
   const refreshToken = await jwtHandle(
-    { _id: userData._id, phone: userData.phone },
+    { _id: userData._id, phone: userData.email },
     config.jwt_refresh_key,
     config.jwt_refresh_token_expire
   );

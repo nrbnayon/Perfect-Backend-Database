@@ -1,7 +1,7 @@
 const express = require("express");
 
-const JoiUserValidationSchema = require("./user.validation");
 const validateRequest = require("../../../Middleware/validateRequest");
+const JoiUserValidationSchema = require("./user.validation");
 const userController = require("./user.controller");
 
 const router = express.Router();
@@ -9,7 +9,7 @@ const router = express.Router();
 router.post(
   "/exist-user",
   validateRequest(JoiUserValidationSchema.phoneNumberRequiredSchema),
-  userController.checkUserExistusingPhone
+  userController.checkUserExistusingEmail
 );
 
 router.post(
@@ -21,13 +21,13 @@ router.post(
 router.post(
   "/login",
   validateRequest(JoiUserValidationSchema.loginSchema),
-  userController.loginUserUsingPhoneAndPassword
+  userController.loginUserUsingEmailAndPassword
 );
 
 router.post(
   "/varify-otp",
   validateRequest(JoiUserValidationSchema.phoneOTPVarificationSchema),
-  userController.checkUserExistusingPhone
+  userController.checkUserExistusingEmail
 );
 
 router.put(
@@ -36,11 +36,11 @@ router.put(
   userController.updateUserProfile
 );
 
-router.post(
-  "/forgot-password",
-  validateRequest(JoiUserValidationSchema.forgotPasswordSchema),
-  userController.forgotPassword
-);
+// router.post(
+//   "/forgot-password",
+//   validateRequest(JoiUserValidationSchema.forgotPasswordSchema),
+//   userController.forgotPassword
+// );
 
 router.get(
   "/my-profile",
