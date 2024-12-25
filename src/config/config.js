@@ -113,6 +113,10 @@ module.exports = {
     rateLimit: {
       windowMs: parseInt(process.env.RATE_LIMIT_WINDOW),
       max: parseInt(process.env.RATE_LIMIT_MAX),
+      message:
+        "🚫 Whoa there! Too many login attempts with same ip. Take a coffee break ☕ and try again in 15 minutes!",
+      standardHeaders: true,
+      legacyHeaders: false,
     },
   },
 };

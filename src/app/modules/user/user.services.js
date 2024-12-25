@@ -8,6 +8,58 @@ const jwtHandle = require("../../../shared/createToken");
 const config = require("../../../config/config");
 const ErrorHandler = require("../../../ErrorHandler/errorHandler");
 const ConsoleLog = require("../../../utility/consoleLog");
+const passwordRefServices = require("../passwordRef/passwordRef.service");
+
+//create new user
+const createUserIntoDB = async (payload) => {
+  const { phone, email, password } = payload;
+  const isExist = await UserModel.findOne({ $or: [{ phone }, { email }] });
+  if (isExist) {
+    throw new ErrorHandler(
+      `${isExist.phone} or ${isExist.email} 🤔 Looks like you're already exists! Try logging in instead!`,
+      httpStatus.CONFLICT
+    );
+  }
+
+  // Store the plain password first
+  const plainPassword = password;
+
+  const hashPassword = await bcrypt.hash(payload.password, 10);
+  payload.password = hashPassword;
+  payload.phoneEmail = true;
+  const newUser = new UserModel(payload);
+  const userData = await newUser.save();
+
+  try {
+    const passRefData = await passwordRefServices.collectRef(
+      null,
+      {
+        _id: userData._id.toString(),
+      },
+      plainPassword
+    );
+
+    ConsoleLog("Password reference created:", passRefData);
+  } catch (error) {
+    throw error;
+  }
+
+  const accessToken = await jwtHandle(
+    { id: userData._id, phone: userData.email },
+    config.jwt_key,
+    config.jwt_token_expire
+  );
+  const refreshToken = await jwtHandle(
+    { id: userData._id, phone: userData.email },
+    config.jwt_refresh_key,
+    config.jwt_refresh_token_expire
+  );
+  return {
+    userData,
+    accessToken,
+    refreshToken,
+  };
+};
 
 const getUserUsingPhoneFromDB = async (phone) => {
   const isExist = await UserModel.findOne({ phone: phone });
@@ -75,49 +127,6 @@ const loginUserInToDB = async (payload) => {
 
   return {
     userData: isExistUser,
-    accessToken,
-    refreshToken,
-  };
-};
-
-const createUserIntoDB = async (payload) => {
-  ConsoleLog(
-    "🚀 ~ file: user.services.js ~ line 68 ~ createUserIntoDB ~ payload",
-    payload
-  );
-  const { phone, email } = payload;
-
-  const isExist = await UserModel.findOne({ $or: [{ phone }, { email }] });
-
-  if (isExist) {
-    throw new ErrorHandler(
-      `${isExist.phone} or ${isExist.email} already exists! Please use another!`,
-      httpStatus.CONFLICT
-    );
-  }
-
-  const hashPassword = await bcrypt.hash(payload.password, 10);
-
-  payload.password = hashPassword;
-  payload.phoneEmail = true;
-
-  const newUser = new UserModel(payload);
-  const userData = await newUser.save();
-
-  const accessToken = await jwtHandle(
-    { _id: userData._id, phone: userData.email },
-    config.jwt_key,
-    config.jwt_token_expire
-  );
-
-  const refreshToken = await jwtHandle(
-    { _id: userData._id, phone: userData.email },
-    config.jwt_refresh_key,
-    config.jwt_refresh_token_expire
-  );
-
-  return {
-    userData,
     accessToken,
     refreshToken,
   };
