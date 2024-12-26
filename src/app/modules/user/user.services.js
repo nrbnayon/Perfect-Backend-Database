@@ -26,7 +26,7 @@ const createUserIntoDB = async (payload) => {
 
   const hashPassword = await bcrypt.hash(payload.password, 10);
   payload.password = hashPassword;
-  payload.phoneEmail = true;
+  payload.emailVerify = true;
   const newUser = new UserModel(payload);
   const userData = await newUser.save();
 
@@ -45,10 +45,11 @@ const createUserIntoDB = async (payload) => {
   }
 
   const accessToken = await jwtHandle(
-    { id: userData._id, phone: userData.email },
+    { id: userData._id, email: userData.email },
     config.jwt_key,
     config.jwt_token_expire
   );
+
   const refreshToken = await jwtHandle(
     { id: userData._id, phone: userData.email },
     config.jwt_refresh_key,

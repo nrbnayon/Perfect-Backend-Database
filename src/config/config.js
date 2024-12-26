@@ -10,7 +10,7 @@ module.exports = {
    * Contains essential configuration for the application's environment
    * and server setup
    */
-  env: process.env.NODE_ENV,
+  env: process.env.NODE_ENV || process.env.PRODUCTION,
   port: process.env.PORT,
   database_url: process.env.DATABASE_URL,
 

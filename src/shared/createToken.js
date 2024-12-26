@@ -4,7 +4,8 @@ const jwtHandle = async (payload, secret, expireTime) => {
   // console.log("secret...:", secret);
   const token = jwt.sign(
     {
-      email: payload?.phone,
+      phone: payload?.phone,
+      email: payload?.email,
       userId: payload?._id,
     },
     secret,

@@ -6,6 +6,37 @@ const sendResponse = require("../../../shared/sendResponse");
 const config = require("../../../config/config");
 const ConsoleLog = require("../../../utility/consoleLog");
 
+const createUser = catchAsyncError(async (req, res) => {
+  ConsoleLog(
+    "🚀 ~ file: user.controller.js ~ line 49 ~ createUser ~ payload",
+    req.body
+  );
+  const result = await userServices.createUserIntoDB(req.body);
+  const { userData, accessToken, refreshToken } = result;
+
+  if (accessToken && refreshToken && userData) {
+    let cookieOptions = {
+      httpOnly: true,
+      secure: config.env === "true",
+      sameSite: config.env === "true" ? "Strict" : "Lax",
+      maxAge: parseInt(config.jwt_token_expire) * 1000,
+    };
+
+    res.cookie("refreshToken", refreshToken, cookieOptions);
+    res.cookie("accessToken", accessToken, cookieOptions);
+  }
+
+  sendResponse(res, {
+    statusCode: httpStatus.CREATED,
+    success: true,
+    message: "User created successfully",
+    data: {
+      userData,
+      accessToken,
+    },
+  });
+});
+
 const checkUserExistusingEmail = catchAsyncError(async (req, res) => {
   const { email } = req.body;
   const result = await userServices.getUserUsingEmailFromDB(email);
@@ -38,35 +69,6 @@ const loginUserUsingEmailAndPassword = catchAsyncError(async (req, res) => {
     statusCode: httpStatus.OK,
     success: true,
     message: "User logged in successfully",
-    data: {
-      userData,
-      accessToken,
-    },
-  });
-});
-
-const createUser = catchAsyncError(async (req, res) => {
-  ConsoleLog(
-    "🚀 ~ file: user.controller.js ~ line 49 ~ createUser ~ payload",
-    req.body
-  );
-  const result = await userServices.createUserIntoDB(req.body);
-  const { userData, accessToken, refreshToken } = result;
-
-  if (accessToken && refreshToken && userData) {
-    let cookieOptions = {
-      secure: config.env === "production",
-      httpOnly: false,
-    };
-
-    res.cookie("refreshToken", refreshToken, cookieOptions);
-    res.cookie("accessToken", accessToken, cookieOptions);
-  }
-
-  sendResponse(res, {
-    statusCode: httpStatus.CREATED,
-    success: true,
-    message: "User created successfully",
     data: {
       userData,
       accessToken,

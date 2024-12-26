@@ -1,6 +1,7 @@
 // user.validation.js
 const Joi = require("joi");
 const bangladeshiPhoneNumberRegex = /^(?:\+88|88)?01[3-9]\d{8}$/;
+
 const loginSchema = Joi.object({
   phone: Joi.string()
     .trim()
@@ -18,6 +19,46 @@ const loginSchema = Joi.object({
     "string.empty": "Password is required",
     "any.required": "Password is required",
   }),
+});
+
+const userCreateSchema = Joi.object({
+  phone: Joi.string()
+    .trim()
+    .required()
+    .custom((value, helpers) => {
+      if (bangladeshiPhoneNumberRegex.test(value) && value.length === 11) {
+        return value;
+      } else {
+        return helpers.message(
+          "Invalid Bangladeshi phone number format or length"
+        );
+      }
+    }, "Phone Number Validation"),
+
+  firstname: Joi.string().required().messages({
+    "string.empty": "firstname is required",
+    "any.required": "firstname is required",
+  }),
+
+  lastname: Joi.string().required().messages({
+    "string.empty": "lastname is required",
+    "any.required": "lastname is required",
+  }),
+
+  email: Joi.string().required().messages({
+    "string.empty": "Email is required",
+    "any.required": "Email is required",
+  }),
+
+  password: Joi.string().required().messages({
+    "string.empty": "Password is required",
+    "any.required": "Password is required",
+  }),
+
+  phoneVerify: Joi.boolean().messages({}),
+  emailVerify: Joi.boolean().messages({}),
+  userStatus: Joi.string().messages({}),
+  role: Joi.string().messages({}),
 });
 
 const phoneNumberOTPSchema = Joi.object({
@@ -54,47 +95,6 @@ const otpVarificationSchema = Joi.object({
     "string.empty": "otpCode is required",
     "any.required": "otpCode is required",
   }),
-});
-
-const userCreateSchema = Joi.object({
-  phone: Joi.string()
-    .trim()
-    // .required()
-    .custom((value, helpers) => {
-      console.log("Phone Value:", value); // Log the phone value for debugging
-      if (bangladeshiPhoneNumberRegex.test(value) && value.length === 11) {
-        return value;
-      } else {
-        return helpers.message(
-          "Invalid Bangladeshi phone number format or length"
-        );
-      }
-    }, "Phone Number Validation"),
-
-  firstname: Joi.string().required().messages({
-    "string.empty": "firstname is required",
-    "any.required": "firstname is required",
-  }),
-
-  lastname: Joi.string().required().messages({
-    "string.empty": "lastname is required",
-    "any.required": "lastname is required",
-  }),
-
-  email: Joi.string().required().messages({
-    "string.empty": "Email is required",
-    "any.required": "Email is required",
-  }),
-
-  password: Joi.string().required().messages({
-    "string.empty": "Password is required",
-    "any.required": "Password is required",
-  }),
-
-  phoneVerify: Joi.boolean().messages({}),
-  emailVerify: Joi.boolean().messages({}),
-  userStatus: Joi.string().messages({}),
-  role: Joi.string().messages({}),
 });
 
 const gmailOTPVarificationSchema = Joi.object({
