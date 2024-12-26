@@ -13,6 +13,12 @@ const userModel = mongoose.Schema(
       required: [true, "Please enter Your Last Name"],
       trim: true,
     },
+    username: {
+      type: String,
+      unique: true,
+      trim: true,
+    },
+
     email: {
       type: String,
       required: true,
@@ -25,7 +31,7 @@ const userModel = mongoose.Schema(
     },
     phone: {
       type: String,
-      // length: [11, "Phone number must be 11 digits"],
+      length: [11, "Phone number must be 11 digits"],
       trim: true,
     },
     phoneVerify: {
@@ -45,6 +51,10 @@ const userModel = mongoose.Schema(
       type: String,
       enum: ["2001", "1999"],
       default: "1999",
+    },
+    isAdmin: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }

@@ -4,13 +4,8 @@ const userServices = require("./user.services");
 const catchAsyncError = require("../../../ErrorHandler/catchAsyncError");
 const sendResponse = require("../../../shared/sendResponse");
 const config = require("../../../config/config");
-const ConsoleLog = require("../../../utility/consoleLog");
 
 const createUser = catchAsyncError(async (req, res) => {
-  ConsoleLog(
-    "🚀 ~ file: user.controller.js ~ line 49 ~ createUser ~ payload",
-    req.body
-  );
   const result = await userServices.createUserIntoDB(req.body);
   const { userData, accessToken, refreshToken } = result;
 

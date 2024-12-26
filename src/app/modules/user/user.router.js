@@ -7,15 +7,15 @@ const userController = require("./user.controller");
 const router = express.Router();
 
 router.post(
-  "/exist-user",
-  validateRequest(JoiUserValidationSchema.phoneNumberRequiredSchema),
-  userController.checkUserExistusingEmail
-);
-
-router.post(
   "/create",
   validateRequest(JoiUserValidationSchema.userCreateSchema),
   userController.createUser
+);
+
+router.post(
+  "/exist-user",
+  validateRequest(JoiUserValidationSchema.phoneNumberRequiredSchema),
+  userController.checkUserExistusingEmail
 );
 
 router.post(

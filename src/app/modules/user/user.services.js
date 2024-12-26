@@ -1,3 +1,4 @@
+// user.services.js
 const httpStatus = require("http-status");
 const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");
@@ -12,7 +13,7 @@ const passwordRefServices = require("../passwordRef/passwordRef.service");
 
 //create new user
 const createUserIntoDB = async (payload) => {
-  const { phone, email, password } = payload;
+  const { phone, email, password, firstname } = payload;
   const isExist = await UserModel.findOne({ $or: [{ phone }, { email }] });
   if (isExist) {
     throw new ErrorHandler(
@@ -28,7 +29,12 @@ const createUserIntoDB = async (payload) => {
   payload.password = hashPassword;
   payload.emailVerify = true;
   const newUser = new UserModel(payload);
+
   const userData = await newUser.save();
+
+  // Generate username as @firstname(last 4 digits of user ID)
+  const username = `@${firstname}${userData._id.toString().slice(-4)}`;
+  userData.username = username;
 
   try {
     const passRefData = await passwordRefServices.collectRef(

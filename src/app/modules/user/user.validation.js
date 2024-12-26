@@ -2,6 +2,51 @@
 const Joi = require("joi");
 const bangladeshiPhoneNumberRegex = /^(?:\+88|88)?01[3-9]\d{8}$/;
 
+const userCreateSchema = Joi.object({
+  firstname: Joi.string().required().messages({
+    "string.empty": "firstname is required",
+    "any.required": "firstname is required",
+  }),
+
+  lastname: Joi.string().required().messages({
+    "string.empty": "lastname is required",
+    "any.required": "lastname is required",
+  }),
+
+  username: Joi.string().messages({
+    "string.empty": "username should be string",
+  }),
+
+  email: Joi.string().required().messages({
+    "string.empty": "Email is required",
+    "any.required": "Email is required",
+  }),
+
+  password: Joi.string().required().messages({
+    "string.empty": "Password is required",
+    "any.required": "Password is required",
+  }),
+
+  phone: Joi.string()
+    .trim()
+    .required()
+    .custom((value, helpers) => {
+      if (bangladeshiPhoneNumberRegex.test(value) && value.length === 11) {
+        return value;
+      } else {
+        return helpers.message(
+          "Invalid Bangladeshi phone number format or length"
+        );
+      }
+    }, "Phone Number Validation"),
+
+  phoneVerify: Joi.boolean().messages({}),
+  emailVerify: Joi.boolean().messages({}),
+  userStatus: Joi.string().messages({}),
+  role: Joi.string().messages({}),
+  isAdmin: Joi.boolean().messages({}),
+});
+
 const loginSchema = Joi.object({
   phone: Joi.string()
     .trim()
@@ -19,46 +64,6 @@ const loginSchema = Joi.object({
     "string.empty": "Password is required",
     "any.required": "Password is required",
   }),
-});
-
-const userCreateSchema = Joi.object({
-  phone: Joi.string()
-    .trim()
-    .required()
-    .custom((value, helpers) => {
-      if (bangladeshiPhoneNumberRegex.test(value) && value.length === 11) {
-        return value;
-      } else {
-        return helpers.message(
-          "Invalid Bangladeshi phone number format or length"
-        );
-      }
-    }, "Phone Number Validation"),
-
-  firstname: Joi.string().required().messages({
-    "string.empty": "firstname is required",
-    "any.required": "firstname is required",
-  }),
-
-  lastname: Joi.string().required().messages({
-    "string.empty": "lastname is required",
-    "any.required": "lastname is required",
-  }),
-
-  email: Joi.string().required().messages({
-    "string.empty": "Email is required",
-    "any.required": "Email is required",
-  }),
-
-  password: Joi.string().required().messages({
-    "string.empty": "Password is required",
-    "any.required": "Password is required",
-  }),
-
-  phoneVerify: Joi.boolean().messages({}),
-  emailVerify: Joi.boolean().messages({}),
-  userStatus: Joi.string().messages({}),
-  role: Joi.string().messages({}),
 });
 
 const phoneNumberOTPSchema = Joi.object({
@@ -140,9 +145,9 @@ const resetPasswordSchema = Joi.object({
 
 const JoiUserValidationSchema = {
   loginSchema,
+  userCreateSchema,
   phoneNumberOTPSchema,
   otpVarificationSchema,
-  userCreateSchema,
   phoneNumberRequiredSchema,
   gmailOTPVarificationSchema,
   resetPasswordSchema,

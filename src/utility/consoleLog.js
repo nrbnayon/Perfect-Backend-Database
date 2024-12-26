@@ -1,7 +1,7 @@
 const config = require("../config/config");
 
 function ConsoleLog(data) {
-  if (config.env === "development") {
+  if (config.env === "false") {
     console.log(data);
   }
 }

@@ -1,16 +1,9 @@
 // Import necessary modules
 const nodemailer = require("nodemailer");
+const config = require("../config/config");
 
 // Nodemailer transporter configuration
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  host: "smtp.gmail.com",
-  secure: true,
-  auth: {
-    user: process.env.EMAIL,
-    pass: process.env.PASSWORD,
-  },
-});
+const transporter = nodemailer.createTransport(config.email.smtp);
 
 // Function to send an email
 exports.sendMail = async (receiverEmail, subject, body) => {
@@ -20,14 +13,14 @@ exports.sendMail = async (receiverEmail, subject, body) => {
     }
 
     const info = await transporter.sendMail({
-      from: '"📬 Watch Nest" <no-reply@watchnest.com>',
+      from: '"📬" <no-reply@nrbnayon.com>',
       to: receiverEmail,
       subject: subject,
       html: body,
     });
 
     // Log or use the info object for debugging
-    // console.log("Email sent info:", info);
+    console.log("Email sent info:", info);
 
     return {
       success: true,
