@@ -2,8 +2,8 @@
 const mongoose = require("mongoose");
 const otpModel = mongoose.Schema(
   {
-    user: {
-      type: Schema.Types.ObjectId,
+    userID: {
+      type: mongoose.Schema.Types.ObjectID,
       ref: "User",
       required: true,
     },

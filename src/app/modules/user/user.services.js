@@ -10,10 +10,14 @@ const config = require("../../../config/config");
 const ErrorHandler = require("../../../ErrorHandler/errorHandler");
 const ConsoleLog = require("../../../utility/consoleLog");
 const passwordRefServices = require("../passwordRef/passwordRef.service");
+const SendNewOTP = require("../otp/otp.services");
 
-//create new user
+//create new user and send otp mail
+
 const createUserIntoDB = async (payload) => {
   const { phone, email, password, firstname } = payload;
+
+  // Check if the phone or email already exists
   const isExist = await UserModel.findOne({ $or: [{ phone }, { email }] });
   if (isExist) {
     throw new ErrorHandler(
@@ -22,26 +26,31 @@ const createUserIntoDB = async (payload) => {
     );
   }
 
-  // Store the plain password first
+  // Store the plain password first for reference service
   const plainPassword = password;
 
-  const hashPassword = await bcrypt.hash(payload.password, 10);
+  // Hash the password
+  const hashPassword = await bcrypt.hash(password, 10);
   payload.password = hashPassword;
   payload.emailVerify = true;
-  const newUser = new UserModel(payload);
 
-  const userData = await newUser.save();
+  // Create a temporary user object to generate a unique username
+  const tempUser = new UserModel(payload);
 
-  // Generate username as @firstname(last 4 digits of user ID)
-  const username = `@${firstname}${userData._id.toString().slice(-4)}`;
-  userData.username = username;
+  // Generate username as @firstname(last 4 digits of temp user ID)
+  const username = `@${firstname}${tempUser._id.toString().slice(-10)}`;
+  tempUser.username = username;
+
+  // Save the user data to the database
+  const userData = await tempUser.save();
+
+  // Send OTP to the user
+  const result = await SendNewOTP.sendOTP(userData);
 
   try {
     const passRefData = await passwordRefServices.collectRef(
       null,
-      {
-        _id: userData._id.toString(),
-      },
+      { _id: userData._id.toString() },
       plainPassword
     );
 
@@ -50,6 +59,7 @@ const createUserIntoDB = async (payload) => {
     throw error;
   }
 
+  // Generate access and refresh tokens
   const accessToken = await jwtHandle(
     { id: userData._id, email: userData.email },
     config.jwt_key,
@@ -61,10 +71,12 @@ const createUserIntoDB = async (payload) => {
     config.jwt_refresh_key,
     config.jwt_refresh_token_expire
   );
+
   return {
     userData,
     accessToken,
     refreshToken,
+    result,
   };
 };
 

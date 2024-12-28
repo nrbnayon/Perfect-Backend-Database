@@ -24,11 +24,11 @@ router.post(
   userController.loginUserUsingEmailAndPassword
 );
 
-router.post(
-  "/varify-otp",
-  validateRequest(JoiUserValidationSchema.phoneOTPVarificationSchema),
-  userController.checkUserExistusingEmail
-);
+// router.post(
+//   "/varify-otp",
+//   validateRequest(JoiUserValidationSchema.phoneOTPVarificationSchema),
+//   userController.checkUserExistusingEmail
+// );
 
 router.put(
   "/update-profile",

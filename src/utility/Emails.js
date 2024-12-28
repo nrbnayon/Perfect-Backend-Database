@@ -1,6 +1,7 @@
 // Import necessary modules
 const nodemailer = require("nodemailer");
 const config = require("../config/config");
+const { logger } = require("../shared/logger");
 
 // Nodemailer transporter configuration
 const transporter = nodemailer.createTransport(config.email.smtp);
@@ -20,7 +21,7 @@ exports.sendMail = async (receiverEmail, subject, body) => {
     });
 
     // Log or use the info object for debugging
-    console.log("Email sent info:", info);
+    logger.info("Email sent info:", info);
 
     return {
       success: true,

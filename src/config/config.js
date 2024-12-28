@@ -73,7 +73,7 @@ module.exports = {
    */
   tokenExpirations: {
     login: process.env.LOGIN_TOKEN_EXPIRATION,
-    otp: parseInt(process.env.OTP_EXPIRATION_TIME),
+    otp_time: parseInt(process.env.OTP_EXPIRATION_TIME),
     passwordReset: process.env.PASSWORD_RESET_TOKEN_EXPIRATION,
     cookie: parseInt(process.env.COOKIE_EXPIRATION_DAYS),
   },
