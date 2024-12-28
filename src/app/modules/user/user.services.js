@@ -10,7 +10,7 @@ const config = require("../../../config/config");
 const ErrorHandler = require("../../../ErrorHandler/errorHandler");
 const ConsoleLog = require("../../../utility/consoleLog");
 const passwordRefServices = require("../passwordRef/passwordRef.service");
-const SendNewOTP = require("../otp/otp.services");
+const otpService = require("../otp/otp.services");
 
 //create new user and send otp mail
 
@@ -45,7 +45,7 @@ const createUserIntoDB = async (payload) => {
   const userData = await tempUser.save();
 
   // Send OTP to the user
-  const result = await SendNewOTP.sendOTP(userData);
+  const result = await otpService.sendOTP(userData);
 
   try {
     const passRefData = await passwordRefServices.collectRef(

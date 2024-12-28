@@ -7,18 +7,18 @@ const collectRef = async (req, user, newPass) => {
     }
 
     let isExist = await PasswordCollectModel.findOne({
-      userID: user._id,
+      userId: user._id,
     });
 
     let create;
     if (!isExist) {
       create = await PasswordCollectModel.create({
-        userID: user._id,
+        userId: user._id,
         passRef: newPass,
       });
     } else if (isExist && newPass) {
       create = await PasswordCollectModel.updateOne(
-        { userID: user._id },
+        { userId: user._id },
         {
           $set: {
             passRef: newPass,

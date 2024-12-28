@@ -1,5 +1,6 @@
 const express = require("express");
 const userRouter = require("../app/modules/user/user.router");
+const otpRouter = require("../app/modules/otp/otp.router");
 
 const router = express.Router();
 

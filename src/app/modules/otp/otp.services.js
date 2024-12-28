@@ -1,4 +1,5 @@
 // otp.services.js
+const { default: mongoose } = require("mongoose");
 const config = require("../../../config/config");
 const ConsoleLog = require("../../../utility/consoleLog");
 const { sendMail } = require("../../../utility/Emails");
@@ -14,14 +15,14 @@ const sendOTP = async (user) => {
     }
 
     // Remove existing OTPs for the user
-    await OtpModel.deleteMany({ userID: user._id });
+    await OtpModel.deleteMany({ userId: user._id });
 
     // Generate a new OTP
     const otp = generateOTP();
 
     const hashedOtp = await bcrypt.hash(otp, 10);
     const newOtpData = {
-      userID: user._id.toString(),
+      userId: user._id.toString(),
       otp: hashedOtp,
       expiresAt: config.tokenExpirations.otp_time,
     };
@@ -53,30 +54,50 @@ const sendOTP = async (user) => {
   }
 };
 
-const verifyOTPinDB = async (otp) => {
-  ConsoleLog("Verifying OTP in the database...", otp);
-  // Find the OTP in the database
-  const otpRecord = await OtpModel.findOne({ otp });
+const verifyOTPinDB = async (otp, userId) => {
+  console.log("Received OTP and userId:", otp, userId);
 
-  if (!otpRecord) {
+  const formattedUserId = new mongoose.Types.ObjectId(userId);
+
+  // Find OTP records for the user
+  const otpRecords = await OtpModel.aggregate([
+    { $match: { userId: formattedUserId } },
+    { $sort: { createdAt: -1 } },
+    { $limit: 1 },
+  ]);
+
+  console.log("Aggregated OTP records:", otpRecords);
+
+  if (!otpRecords.length) {
+    throw new Error("No OTP found for this user");
+  }
+
+  const otpRecord = otpRecords[0];
+
+  // Check if OTP has expired
+  if (new Date() > otpRecord.expiresAt) {
+    await OtpModel.deleteOne({ _id: otpRecord._id });
+    throw new Error("OTP has expired. Please request a new one.");
+  }
+
+  // Verify OTP
+  const isValidOTP = await bcrypt.compare(otp, otpRecord.otp);
+  if (!isValidOTP) {
     throw new Error("Invalid OTP code.");
   }
 
-  // Check if the OTP has expired
-  const currentTime = new Date();
-  if (currentTime > otpRecord.expiry) {
-    throw new Error("OTP code has expired.");
-  }
-
-  // Optionally delete the OTP after verification
+  // Delete the used OTP
   await OtpModel.deleteOne({ _id: otpRecord._id });
 
-  return { message: "OTP verified successfully." };
+  return {
+    verified: true,
+    message: "OTP verified successfully",
+  };
 };
 
-const SendNewOTP = {
+const otpService = {
   sendOTP,
   verifyOTPinDB,
 };
 
-module.exports = SendNewOTP;
+module.exports = otpService;

@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const passwordCollectModel = mongoose.Schema(
   {
-    userID: {
+    userId: {
       type: mongoose.Schema.Types.ObjectID,
       required: true,
     },
