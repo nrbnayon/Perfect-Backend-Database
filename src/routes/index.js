@@ -14,6 +14,10 @@ const routes = [
     path: "/user",
     route: userRouter,
   },
+  {
+    path: "/otp",
+    route: otpRouter,
+  },
 ];
 
 // Register the routes

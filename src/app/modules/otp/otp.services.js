@@ -1,11 +1,11 @@
 // otp.services.js
 const config = require("../../../config/config");
+const ConsoleLog = require("../../../utility/consoleLog");
 const { sendMail } = require("../../../utility/Emails");
 const { generateOTP } = require("../../../utility/GenerateOtp");
 const OtpModel = require("./otp.model");
 const otpValidationSchema = require("./otp.validation");
 const bcrypt = require("bcryptjs");
-
 
 const sendOTP = async (user) => {
   try {
@@ -21,9 +21,9 @@ const sendOTP = async (user) => {
 
     const hashedOtp = await bcrypt.hash(otp, 10);
     const newOtpData = {
-      userID: user._id.toString(), 
+      userID: user._id.toString(),
       otp: hashedOtp,
-      expiresAt: config.tokenExpirations.otp_time, 
+      expiresAt: config.tokenExpirations.otp_time,
     };
 
     // Validate the OTP data
@@ -53,19 +53,30 @@ const sendOTP = async (user) => {
   }
 };
 
-const verifyOTP = async (otp) => {
-  try {
-    // Find the OTP in the database
-    const otpRecord = await OtpModel.findOne({ otp: otp });
-    if (!otpRecord) {
-      throw new Error("Invalid OTP code.");
-    }
+const verifyOTPinDB = async (otp) => {
+  ConsoleLog("Verifying OTP in the database...", otp);
+  // Find the OTP in the database
+  const otpRecord = await OtpModel.findOne({ otp });
+
+  if (!otpRecord) {
+    throw new Error("Invalid OTP code.");
   }
 
+  // Check if the OTP has expired
+  const currentTime = new Date();
+  if (currentTime > otpRecord.expiry) {
+    throw new Error("OTP code has expired.");
+  }
+
+  // Optionally delete the OTP after verification
+  await OtpModel.deleteOne({ _id: otpRecord._id });
+
+  return { message: "OTP verified successfully." };
+};
 
 const SendNewOTP = {
   sendOTP,
-  verifyOTP
+  verifyOTPinDB,
 };
 
 module.exports = SendNewOTP;

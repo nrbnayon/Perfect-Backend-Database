@@ -1,3 +1,5 @@
+// otp.router.js
+
 const express = require("express");
 
 const validateRequest = require("../../../Middleware/validateRequest");
@@ -7,9 +9,10 @@ const OtpController = require("./otp.controller");
 const router = express.Router();
 
 router.post(
-  "/varify-otp",
+  "/varify",
   validateRequest(otpValidationSchema),
   OtpController.otpVerification
 );
 
-module.exports = router;
+const otpRouter = router;
+module.exports = otpRouter;
