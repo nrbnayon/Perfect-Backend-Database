@@ -11,7 +11,7 @@ const { authLimiter } = require("../../../Middleware/rateLimit.middleware");
 const router = express.Router();
 
 router.post(
-  "/varify",
+  "/verify",
   extractUserFromTokenMiddleware,
   authLimiter,
   validateRequest(otpValidationSchema),

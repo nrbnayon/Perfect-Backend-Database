@@ -32,7 +32,7 @@ const createUserIntoDB = async (payload) => {
   // Hash the password
   const hashPassword = await bcrypt.hash(password, 10);
   payload.password = hashPassword;
-  payload.emailVerify = true;
+  // payload.emailVerify = true;
 
   // Create a temporary user object to generate a unique username
   const tempUser = new UserModel(payload);

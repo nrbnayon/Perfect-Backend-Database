@@ -7,6 +7,7 @@ const { generateOTP } = require("../../../utility/GenerateOtp");
 const OtpModel = require("./otp.model");
 const otpValidationSchema = require("./otp.validation");
 const bcrypt = require("bcryptjs");
+const UserModel = require("../user/user.model");
 
 const sendOTP = async (user) => {
   try {
@@ -24,7 +25,7 @@ const sendOTP = async (user) => {
     const newOtpData = {
       userId: user._id.toString(),
       otp: hashedOtp,
-      expiresAt: config.tokenExpirations.otp_time,
+      expiresAt: new Date(Date.now() + config.tokenExpirations.otp_time),
     };
 
     // Validate the OTP data
@@ -66,8 +67,6 @@ const verifyOTPinDB = async (otp, userId) => {
     { $limit: 1 },
   ]);
 
-  console.log("Aggregated OTP records:", otpRecords);
-
   if (!otpRecords.length) {
     throw new Error("No OTP found for this user");
   }
@@ -85,6 +84,11 @@ const verifyOTPinDB = async (otp, userId) => {
   if (!isValidOTP) {
     throw new Error("Invalid OTP code.");
   }
+
+  // Update the user's email verification status
+  await UserModel.findByIdAndUpdate(formattedUserId, {
+    $set: { emailVerify: true },
+  });
 
   // Delete the used OTP
   await OtpModel.deleteOne({ _id: otpRecord._id });
