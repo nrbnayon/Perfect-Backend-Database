@@ -3,11 +3,13 @@ const express = require("express");
 const validateRequest = require("../../../Middleware/validateRequest");
 const JoiUserValidationSchema = require("./user.validation");
 const userController = require("./user.controller");
+const { authLimiter } = require("../../../Middleware/rateLimit.middleware");
 
 const router = express.Router();
 
 router.post(
   "/create",
+  authLimiter,
   validateRequest(JoiUserValidationSchema.userCreateSchema),
   userController.createUser
 );

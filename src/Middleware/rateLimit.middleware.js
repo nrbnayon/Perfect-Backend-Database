@@ -8,10 +8,52 @@ const baseConfig = {
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 };
 
-// Helper to generate key from request
-const generateKey = (req) => {
-  console.log("user id: ", req.user);
-  return req.user.userId ? `${req.ip}-${req.userId}` : req.ip;
+// // Helper to generate key from request
+// const generateKey = (req, res, next) => {
+//   console.log("user: ", req?.user, "id", req?.user?.userId, "ip", req.ip);
+//   try {
+//     // Generate a key based on userId or email
+//     if (req.user?.userId) {
+//       return `${req.ip}-${req.user.userId}`;
+//     } else if (req.body?.email) {
+//       return `${req.ip}-${req.body.email}`;
+//     } else {
+//       return req.ip; // Fallback to IP address only
+//     }
+//     next();
+//   } catch (error) {
+//     console.error("Error in generateKeyMiddleware:", error.message);
+//     res
+//       .status(500)
+//       .json({ error: "An error occurred while generating the key" });
+//   }
+// };
+
+const generateKey = (req, res, next) => {
+  console.log("user: ", req?.user, "id", req?.user?.userId, "ip", req.ip);
+  try {
+    let key;
+
+    // Generate a key based on userId or email
+    if (req.user?.userId) {
+      key = `${req.ip}-${req.user.userId}`;
+    } else if (req.body?.email) {
+      key = `${req.ip}-${req.body.email}`;
+    } else {
+      key = req.ip; // Fallback to IP address only
+    }
+
+    // Attach the generated key to the request object
+    req.generatedKey = key;
+
+    // Proceed to the next middleware
+    next();
+  } catch (error) {
+    console.error("Error in generateKey middleware:", error.message);
+    res
+      .status(500)
+      .json({ error: "An error occurred while generating the key" });
+  }
 };
 
 // Authentication rate limiter (login/register)
