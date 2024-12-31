@@ -32,18 +32,6 @@ const createUser = catchAsyncError(async (req, res) => {
   });
 });
 
-const checkUserExistusingEmail = catchAsyncError(async (req, res) => {
-  const { email } = req.body;
-  const result = await userServices.getUserUsingEmailFromDB(email);
-
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: "User checked successfully",
-    data: result,
-  });
-});
-
 const loginUserUsingEmailAndPassword = catchAsyncError(async (req, res) => {
   const { email, password } = req.body;
 
@@ -52,8 +40,12 @@ const loginUserUsingEmailAndPassword = catchAsyncError(async (req, res) => {
 
   if (accessToken && refreshToken && userData) {
     let cookieOptions = {
-      secure: config.env === "production",
-      httpOnly: false,
+      // secure: config.env === "production",
+      // httpOnly: false,
+      httpOnly: true,
+      secure: config.env === "true",
+      sameSite: config.env === "true" ? "Strict" : "Lax",
+      maxAge: parseInt(config.jwt_token_expire) * 1000,
     };
 
     res.cookie("refreshToken", refreshToken, cookieOptions);
@@ -68,6 +60,18 @@ const loginUserUsingEmailAndPassword = catchAsyncError(async (req, res) => {
       userData,
       accessToken,
     },
+  });
+});
+
+const checkUserExistusingEmail = catchAsyncError(async (req, res) => {
+  const { email } = req.body;
+  const result = await userServices.getUserUsingEmailFromDB(email);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "User checked successfully",
+    data: result,
   });
 });
 

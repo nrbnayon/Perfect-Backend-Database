@@ -15,15 +15,15 @@ router.post(
 );
 
 router.post(
-  "/exist-user",
-  validateRequest(JoiUserValidationSchema.phoneNumberRequiredSchema),
-  userController.checkUserExistusingEmail
-);
-
-router.post(
   "/login",
   validateRequest(JoiUserValidationSchema.loginSchema),
   userController.loginUserUsingEmailAndPassword
+);
+
+router.post(
+  "/exist-user",
+  validateRequest(JoiUserValidationSchema.phoneNumberRequiredSchema),
+  userController.checkUserExistusingEmail
 );
 
 // router.post(
