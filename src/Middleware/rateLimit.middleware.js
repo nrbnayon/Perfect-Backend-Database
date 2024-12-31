@@ -30,7 +30,14 @@ const baseConfig = {
 // };
 
 const generateKey = (req, res, next) => {
-  console.log("user: ", req?.user, "id", req?.user?.userId, "ip", req.ip);
+  console.log(
+    "Happy new year 2025 user: ",
+    req?.user,
+    "id",
+    req?.user?.userId,
+    "ip",
+    req.ip
+  );
   try {
     let key;
 
@@ -60,7 +67,7 @@ const generateKey = (req, res, next) => {
 const authLimiter = rateLimit({
   ...baseConfig,
   windowMs: config.security.rateLimit.windowMs || 10 * 60 * 1000, // 10 minutes
-  max: config.security.rateLimit.max || 5, // 5 attempts per window
+  max: config.security.rateLimit.max || 5,
   message: {
     status: "error",
     message:
