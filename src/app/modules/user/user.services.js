@@ -39,7 +39,7 @@ const createUserIntoDB = async (payload) => {
 
   // Generate username as @firstname(last 4 digits of temp user ID)
   const username = `@${firstname}${tempUser._id.toString().slice(-10)}`;
-  tempUser.username = username;
+  tempUser.username = username.toLowerCase();
 
   // Save the user data to the database
   const userData = await tempUser.save();
@@ -95,7 +95,7 @@ const getUserUsingPhoneFromDB = async (phone) => {
     userNumber: phone,
     otpType,
     otpMassage:
-      "Your One Time Password For Signup or Login. This OTP is valid for 5 minutes. Talently ltd",
+      "Your One Time Password For Signup or Login. This OTP is valid for 5 minutes.",
   };
 
   // Validate OTP payload
@@ -114,32 +114,151 @@ const getUserUsingPhoneFromDB = async (phone) => {
   };
 };
 
-const loginUserInToDB = async (payload) => {
-  const { phone, password } = payload;
+// const loginUserInToDB = async (payload) => {
+//   console.log("Login user in to DB", payload);
 
-  const isExistUser = await UserModel.findOne({ phone });
+//   const { phone, email, password } = payload;
+
+//   // Ensure at least one of email or phone is provided
+//   if (!email && !phone) {
+//     throw new ErrorHandler(
+//       "Either email or phone is required for login",
+//       httpStatus.BAD_REQUEST
+//     );
+//   }
+
+//   // Find user by email or phone
+//   const isExistUser = await UserModel.findOne({
+//     ...(email && { email }), // Add email to query if provided
+//     ...(phone && { phone }), // Add phone to query if provided
+//   });
+
+//   if (!isExistUser) {
+//     throw new ErrorHandler("User does not exist", httpStatus.NOT_FOUND);
+//   }
+
+//   // Check email verification status if logging in with email
+//   if (email && !isExistUser.emailVerify) {
+//     throw new ErrorHandler(
+//       "Email is not verified. Please verify your email to log in.",
+//       httpStatus.UNAUTHORIZED
+//     );
+//   }
+
+//   // Validate the password
+//   const isValidPassword = await bcrypt.compare(password, isExistUser.password);
+
+//   if (!isValidPassword) {
+//     throw new ErrorHandler(
+//       "Please enter a valid password!",
+//       httpStatus.UNAUTHORIZED
+//     );
+//   }
+
+//   // Prepare token payload
+//   const tokenPayload = {
+//     _id: isExistUser._id,
+//     email: isExistUser.email || null,
+//     phone: isExistUser.phone || null,
+//   };
+
+//   // Generate tokens
+//   const accessToken = await jwtHandle(
+//     tokenPayload,
+//     config.jwt_key,
+//     config.jwt_token_expire
+//   );
+
+//   const refreshToken = await jwtHandle(
+//     tokenPayload,
+//     config.jwt_refresh_key,
+//     config.jwt_refresh_token_expire
+//   );
+
+//   return {
+//     userData: isExistUser,
+//     accessToken,
+//     refreshToken,
+//   };
+// };
+
+const loginUserInToDB = async (payload) => {
+  console.log("Login user in to DB", payload);
+
+  const { phone, email, password } = payload;
+
+  if (!email && !phone) {
+    throw new ErrorHandler(
+      "Either email or phone is required for login",
+      httpStatus.BAD_REQUEST
+    );
+  }
+
+  // Aggregation pipeline to find user and validate email verification
+  const userAggregation = await UserModel.aggregate([
+    {
+      $match: {
+        $or: [{ email }, { phone }],
+      },
+    },
+    {
+      $addFields: {
+        emailVerifyCheck: {
+          $cond: {
+            if: {
+              $and: [
+                { $eq: ["$email", email] },
+                { $eq: ["$emailVerify", false] },
+              ],
+            },
+            then: false,
+            else: true,
+          },
+        },
+      },
+    },
+  ]);
+
+  const isExistUser = userAggregation[0];
 
   if (!isExistUser) {
     throw new ErrorHandler("User does not exist", httpStatus.NOT_FOUND);
   }
 
-  const isValidPassword = await bcrypt.compare(password, isExistUser.password);
-
-  if (!isValidPassword) {
+  // If logging in with email, ensure email is verified
+  if (!isExistUser.emailVerifyCheck) {
     throw new ErrorHandler(
-      "Please Enter Valid password or Phone!!",
+      "Email is not verified. Please verify your email to log in.",
       httpStatus.UNAUTHORIZED
     );
   }
 
+  // Validate the password
+  const isValidPassword = await bcrypt.compare(password, isExistUser.password);
+
+  if (!isValidPassword) {
+    throw new ErrorHandler(
+      "Please enter a valid password!",
+      httpStatus.UNAUTHORIZED
+    );
+  }
+
+  // Prepare token payload
+  const tokenPayload = {
+    _id: isExistUser._id,
+    email: isExistUser.email || null,
+    phone: isExistUser.phone || null,
+  };
+
+  // Generate tokens
   const accessToken = await jwtHandle(
-    { _id: isExistUser._id, phone: isExistUser.phone },
+    tokenPayload,
     config.jwt_key,
     config.jwt_token_expire
   );
 
   const refreshToken = await jwtHandle(
-    { _id: isExistUser._id, phone: isExistUser.phone },
+    tokenPayload,
     config.jwt_refresh_key,
     config.jwt_refresh_token_expire
   );

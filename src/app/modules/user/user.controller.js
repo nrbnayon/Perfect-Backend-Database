@@ -32,36 +32,40 @@ const createUser = catchAsyncError(async (req, res) => {
   });
 });
 
-const loginUserUsingEmailAndPassword = catchAsyncError(async (req, res) => {
-  const { email, password } = req.body;
+const loginUserUsingEmailOrPhoneAndPassword = catchAsyncError(
+  async (req, res) => {
+    const { email, phone, password } = req.body;
 
-  const result = await userServices.loginUserInToDB({ email, password });
-  const { accessToken, refreshToken, userData } = result;
+    const result = await userServices.loginUserInToDB({
+      email,
+      phone,
+      password,
+    });
+    const { accessToken, refreshToken, userData } = result;
 
-  if (accessToken && refreshToken && userData) {
-    let cookieOptions = {
-      // secure: config.env === "production",
-      // httpOnly: false,
-      httpOnly: true,
-      secure: config.env === "true",
-      sameSite: config.env === "true" ? "Strict" : "Lax",
-      maxAge: parseInt(config.jwt_token_expire) * 1000,
-    };
+    if (accessToken && refreshToken && userData) {
+      let cookieOptions = {
+        httpOnly: true,
+        secure: config.env === "true",
+        sameSite: config.env === "true" ? "Strict" : "Lax",
+        maxAge: parseInt(config.jwt_token_expire) * 1000,
+      };
 
-    res.cookie("refreshToken", refreshToken, cookieOptions);
-    res.cookie("accessToken", accessToken, cookieOptions);
+      res.cookie("refreshToken", refreshToken, cookieOptions);
+      res.cookie("accessToken", accessToken, cookieOptions);
+    }
+
+    sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "User logged in successfully",
+      data: {
+        userData,
+        accessToken,
+      },
+    });
   }
-
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: "User logged in successfully",
-    data: {
-      userData,
-      accessToken,
-    },
-  });
-});
+);
 
 const checkUserExistusingEmail = catchAsyncError(async (req, res) => {
   const { email } = req.body;
@@ -159,7 +163,7 @@ const logout = catchAsyncError(async (req, res) => {
 
 const userController = {
   checkUserExistusingEmail,
-  loginUserUsingEmailAndPassword,
+  loginUserUsingEmailOrPhoneAndPassword,
   updateUserProfile,
   createUser,
   getSignUpUserNumber,

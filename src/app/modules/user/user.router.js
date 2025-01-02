@@ -8,7 +8,7 @@ const { authLimiter } = require("../../../Middleware/rateLimit.middleware");
 const router = express.Router();
 
 router.post(
-  "/create",
+  "/signup",
   authLimiter,
   validateRequest(JoiUserValidationSchema.userCreateSchema),
   userController.createUser
@@ -17,7 +17,7 @@ router.post(
 router.post(
   "/login",
   validateRequest(JoiUserValidationSchema.loginSchema),
-  userController.loginUserUsingEmailAndPassword
+  userController.loginUserUsingEmailOrPhoneAndPassword
 );
 
 router.post(

@@ -48,9 +48,14 @@ const userCreateSchema = Joi.object({
 });
 
 const loginSchema = Joi.object({
+  email: Joi.string().required().messages({
+    "string.empty": "Email is required",
+    "any.required": "Email is required",
+  }),
+
   phone: Joi.string()
     .trim()
-    .required()
+    .optional()
     .custom((value, helpers) => {
       if (bangladeshiPhoneNumberRegex.test(value) && value.length === 11) {
         return value;
