@@ -16,21 +16,10 @@ router.post(
 
 router.post(
   "/login",
+  authLimiter,
   validateRequest(JoiUserValidationSchema.loginSchema),
   userController.loginUserUsingEmailOrPhoneAndPassword
 );
-
-router.post(
-  "/exist-user",
-  validateRequest(JoiUserValidationSchema.phoneNumberRequiredSchema),
-  userController.checkUserExistusingEmail
-);
-
-// router.post(
-//   "/varify-otp",
-//   validateRequest(JoiUserValidationSchema.phoneOTPVarificationSchema),
-//   userController.checkUserExistusingEmail
-// );
 
 router.put(
   "/update-profile",
@@ -43,18 +32,6 @@ router.put(
 //   validateRequest(JoiUserValidationSchema.forgotPasswordSchema),
 //   userController.forgotPassword
 // );
-
-router.get(
-  "/my-profile",
-  validateRequest(JoiUserValidationSchema.tokenRequiredSchema),
-  userController.myProfileUsingToken
-);
-
-router.get(
-  "/signup-stats",
-  validateRequest(JoiUserValidationSchema.dateRangeSchema),
-  userController.getSignUpUserNumber
-);
 
 router.post("/logout", userController.logout);
 
