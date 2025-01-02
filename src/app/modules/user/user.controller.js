@@ -67,18 +67,6 @@ const loginUserUsingEmailOrPhoneAndPassword = catchAsyncError(
   }
 );
 
-const checkUserExistusingEmail = catchAsyncError(async (req, res) => {
-  const { email } = req.body;
-  const result = await userServices.getUserUsingEmailFromDB(email);
-
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: "User checked successfully",
-    data: result,
-  });
-});
-
 const forgotPassword = catchAsyncError(async (req, res) => {
   const { email, newPassword } = req.body;
 
@@ -119,21 +107,6 @@ const myProfileUsingToken = catchAsyncError(async (req, res) => {
   });
 });
 
-const getSignUpUserNumber = catchAsyncError(async (req, res) => {
-  const range = {
-    startDate: req.query.startDate,
-    endDate: req.query.endDate,
-  };
-  const result = await userServices.totalSignUpFromDB(range);
-
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: "Signup user data fetched successfully",
-    data: result,
-  });
-});
-
 const updateUserProfile = catchAsyncError(async (req, res) => {
   const updateData = req.body;
 
@@ -162,11 +135,9 @@ const logout = catchAsyncError(async (req, res) => {
 });
 
 const userController = {
-  checkUserExistusingEmail,
   loginUserUsingEmailOrPhoneAndPassword,
   updateUserProfile,
   createUser,
-  getSignUpUserNumber,
   myProfileUsingToken,
   forgotPassword,
   logout,

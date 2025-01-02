@@ -178,9 +178,38 @@ const updateUserProfileIntoDB = async (userId, updateData) => {
   return result;
 };
 
+const singleUserFromDB = async (id) => {
+  const objectId = new mongoose.Types.ObjectId(id);
+
+  const pipeline = [
+    { $match: { _id: objectId } },
+    {
+      $lookup: {
+        from: "candidateprofiles",
+        localField: "_id",
+        foreignField: "candidateId",
+        as: "candidateProfileInfo",
+      },
+    },
+    {
+      $unwind: {
+        path: "$candidateProfileInfo",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+  ];
+
+  const result = await UserModel.aggregate(pipeline);
+
+  return {
+    data: result[0] || null,
+  };
+};
+
 const userServices = {
   loginUserInToDB,
   createUserIntoDB,
+  singleUserFromDB,
   updateUserProfileIntoDB,
 };
 
