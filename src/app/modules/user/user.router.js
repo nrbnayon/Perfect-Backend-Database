@@ -1,12 +1,14 @@
+// user.router.js
 const express = require("express");
-
 const validateRequest = require("../../../Middleware/validateRequest");
 const JoiUserValidationSchema = require("./user.validation");
 const userController = require("./user.controller");
 const { authLimiter } = require("../../../Middleware/rateLimit.middleware");
+const { auth } = require("../../../Middleware/auth.middleware");
 
 const router = express.Router();
 
+// Authentication routes
 router.post(
   "/signup",
   authLimiter,
@@ -21,19 +23,98 @@ router.post(
   userController.loginUserUsingEmailOrPhoneAndPassword
 );
 
-router.put(
-  "/update-profile",
-  validateRequest(JoiUserValidationSchema.updateUserSchema),
-  userController.updateUserProfile
-);
+router.post("/logout", auth(), userController.logout);
 
-// router.post(
-//   "/forgot-password",
-//   validateRequest(JoiUserValidationSchema.forgotPasswordSchema),
-//   userController.forgotPassword
+// Profile routes
+// router.get("/profile", auth(), userController.myProfileUsingToken);
+
+// router.put(
+//   "/profile",
+//   auth(),
+//   validateRequest(JoiUserValidationSchema.updateProfileSchema),
+//   userController.updateUserProfile
 // );
 
-router.post("/logout", userController.logout);
+// Skills and certifications routes
+// router.put(
+//   "/skills",
+//   auth(),
+//   validateRequest(JoiUserValidationSchema.skillSchema),
+//   userController.updateUserSkills
+// );
+
+// router.put(
+//   "/certifications",
+//   auth(),
+//   validateRequest(JoiUserValidationSchema.certificationSchema),
+//   userController.updateUserCertifications
+// );
+
+// // Work and education routes
+// router.put(
+//   "/work-experience",
+//   auth(),
+//   validateRequest(JoiUserValidationSchema.workExperienceSchema),
+//   userController.updateUserWorkExperience
+// );
+
+// router.put(
+//   "/education",
+//   auth(),
+//   validateRequest(JoiUserValidationSchema.educationSchema),
+//   userController.updateUserEducation
+// );
+
+// Performance review routes
+// router.post(
+//   "/performance-review",
+//   auth(),
+//   validateRequest(JoiUserValidationSchema.performanceReviewSchema),
+//   userController.addPerformanceReview
+// );
+
+// // Preferences routes
+// router.put(
+//   "/preferences",
+//   auth(),
+//   validateRequest(JoiUserValidationSchema.preferencesSchema),
+//   userController.updateUserPreferences
+// );
 
 const userRouter = router;
 module.exports = userRouter;
+
+// // user.router.js
+// const express = require("express");
+
+// const validateRequest = require("../../../Middleware/validateRequest");
+// const JoiUserValidationSchema = require("./user.validation");
+// const userController = require("./user.controller");
+// const { authLimiter } = require("../../../Middleware/rateLimit.middleware");
+
+// const router = express.Router();
+
+// router.post(
+//   "/signup",
+//   authLimiter,
+//   validateRequest(JoiUserValidationSchema.userCreateSchema),
+//   userController.createUser
+// );
+
+// router.post(
+//   "/login",
+//   authLimiter,
+//   validateRequest(JoiUserValidationSchema.loginSchema),
+//   userController.loginUserUsingEmailOrPhoneAndPassword
+// );
+
+// router.put(
+//   "/update-profile",
+//   validateRequest(JoiUserValidationSchema.updateUserSchema),
+//   userController.updateUserProfile
+// );
+
+// router.post("/logout", userController.logout);
+
+// const userRouter = router;
+// module.exports = userRouter;
