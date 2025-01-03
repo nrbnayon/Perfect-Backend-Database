@@ -6,12 +6,16 @@ const UserModel = require("../app/modules/user/user.model");
 
 const auth = (...requiredRoles) => {
   return async (req, res, next) => {
+    console.log("auth middleware ", req.body);
+
     try {
       // Get token from various sources
       const token =
         req.cookies?.accessToken ||
         req.headers.authorization?.replace("Bearer ", "") ||
         req.headers["x-access-token"];
+
+      console.log("auth token ", token);
 
       if (!token) {
         throw new ErrorHandler(
@@ -22,8 +26,12 @@ const auth = (...requiredRoles) => {
 
       // Verify token
       let decoded;
+      console.log("decoded token", decoded);
       try {
         decoded = jwt.verify(token, config.jwt_key);
+        console.log("decoded token", decoded);
+
+        //   const decoded = jwt.verify(token, config.jwt_key);
       } catch (error) {
         if (error.name === "TokenExpiredError") {
           throw new ErrorHandler(

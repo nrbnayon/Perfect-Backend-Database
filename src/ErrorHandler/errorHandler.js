@@ -1,7 +1,8 @@
 class ErrorHandler extends Error {
-  constructor(message, statusCode, stack = "") {
+  constructor(message, statusCode, emoji = "❌", stack = "") {
     super(message);
     this.statusCode = statusCode;
+    this.emoji = emoji;
     if (stack) {
       this.stack = stack;
     } else {

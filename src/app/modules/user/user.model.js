@@ -43,6 +43,20 @@ const userModel = mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    activeStatus: {
+      type: Boolean,
+      default: false,
+    },
+    lastActive: {
+      type: Date,
+      default: Date.now,
+    },
+    socketId: {
+      type: String,
+      default: null,
+    },
+
     userStatus: {
       type: String,
       enum: ["Active", "Block", "Restricted"],

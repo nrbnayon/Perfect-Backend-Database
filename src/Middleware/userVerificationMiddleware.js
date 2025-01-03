@@ -10,6 +10,8 @@ const extractUserFromTokenMiddleware = async (req, res, next) => {
 
     const decoded = jwt.verify(token, config.jwt_key);
 
+    console.log("user token verified", decoded);
+
     req.user = decoded;
     next();
   } catch (error) {

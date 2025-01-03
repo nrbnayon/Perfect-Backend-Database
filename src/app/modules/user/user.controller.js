@@ -7,37 +7,54 @@ const config = require("../../../config/config");
 
 // Enhanced user controller with new field support
 const createUser = catchAsyncError(async (req, res) => {
-  const result = await userServices.createUserIntoDB(req.body);
-  const { userData, accessToken, refreshToken } = result;
+  try {
+    // Call the service to create the user in the database
+    const result = await userServices.createUserIntoDB(req.body);
+    const { userData, accessToken, refreshToken } = result;
 
-  if (accessToken && refreshToken && userData) {
-    let cookieOptions = {
-      httpOnly: true,
-      secure: config.env === "true",
-      sameSite: config.env === "true" ? "Strict" : "Lax",
-      maxAge: parseInt(config.jwt_token_expire) * 1000,
-    };
+    // Check if the tokens and user data exist before proceeding
+    if (accessToken && refreshToken && userData) {
+      const cookieOptions = {
+        httpOnly: true,
+        secure: config.env === "true",
+        sameSite: config.env === "true" ? "Strict" : "Lax",
+        maxAge: parseInt(config.jwt_token_expire, 10) * 1000,
+      };
 
-    res.cookie("refreshToken", refreshToken, cookieOptions);
-    res.cookie("accessToken", accessToken, cookieOptions);
+      // Set cookies for the tokens
+      res.cookie("refreshToken", refreshToken, cookieOptions);
+      res.cookie("accessToken", accessToken, cookieOptions);
+    } else {
+      throw new Error("Missing tokens or user data during user creation");
+    }
+
+    // Send the response after ensuring cookies are set
+    return sendResponse(res, {
+      statusCode: httpStatus.CREATED,
+      success: true,
+      message: "User created successfully",
+      data: {
+        userData,
+        accessToken,
+      },
+    });
+  } catch (error) {
+    console.error("Error in createUser:", error.message);
+
+    // Return an error response
+    return sendResponse(res, {
+      statusCode: httpStatus.INTERNAL_SERVER_ERROR,
+      success: false,
+      message: "User creation failed",
+      data: { error: error.message },
+    });
   }
-
-  sendResponse(res, {
-    statusCode: httpStatus.CREATED,
-    success: true,
-    message: "User created successfully",
-    data: {
-      userData,
-      accessToken,
-    },
-  });
 });
 
 const loginUserUsingEmailOrPhoneAndPassword = catchAsyncError(
   async (req, res) => {
     const { email, phone, password } = req.body;
 
-    // Add IP and user agent for login history
     const loginPayload = {
       email,
       phone,
@@ -46,32 +63,88 @@ const loginUserUsingEmailOrPhoneAndPassword = catchAsyncError(
       userAgent: req.headers["user-agent"],
     };
 
-    const result = await userServices.loginUserInToDB(loginPayload);
-    const { accessToken, refreshToken, userData } = result;
+    try {
+      const result = await userServices.loginUserInToDB(loginPayload);
+      const { accessToken, refreshToken, userData } = result;
 
-    if (accessToken && refreshToken && userData) {
-      let cookieOptions = {
-        httpOnly: true,
-        secure: config.env === "true",
-        sameSite: config.env === "true" ? "Strict" : "Lax",
-        maxAge: parseInt(config.jwt_token_expire) * 1000,
-      };
+      if (accessToken && refreshToken && userData) {
+        const cookieOptions = {
+          httpOnly: true,
+          secure: config.env === "true",
+          sameSite: config.env === "true" ? "Strict" : "Lax",
+          maxAge: parseInt(config.jwt_token_expire, 10) * 1000,
+        };
 
-      res.cookie("refreshToken", refreshToken, cookieOptions);
-      res.cookie("accessToken", accessToken, cookieOptions);
+        res.cookie("refreshToken", refreshToken, cookieOptions);
+        res.cookie("accessToken", accessToken, cookieOptions);
+
+        return sendResponse(res, {
+          statusCode: httpStatus.OK,
+          success: true,
+          message: "🎉 User logged in successfully! Welcome back! 🚀",
+          data: {
+            userData,
+            accessToken,
+          },
+        });
+      }
+
+      throw new ErrorHandler(
+        "Login failed: Missing tokens or user data. 🤷‍♂️",
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "😢"
+      );
+    } catch (error) {
+      console.error("Login error:", error.message);
+      return sendResponse(res, {
+        statusCode: error.statusCode || httpStatus.UNAUTHORIZED,
+        success: false,
+        message: `${error.emoji} ${error.message}`,
+        data: null,
+      });
     }
-
-    sendResponse(res, {
-      statusCode: httpStatus.OK,
-      success: true,
-      message: "User logged in successfully",
-      data: {
-        userData,
-        accessToken,
-      },
-    });
   }
 );
+
+// const loginUserUsingEmailOrPhoneAndPassword = catchAsyncError(
+//   async (req, res) => {
+//     const { email, phone, password } = req.body;
+
+//     // Add IP and user agent for login history
+//     const loginPayload = {
+//       email,
+//       phone,
+//       password,
+//       ip: req.ip,
+//       userAgent: req.headers["user-agent"],
+//     };
+
+//     const result = await userServices.loginUserInToDB(loginPayload);
+//     const { accessToken, refreshToken, userData } = result;
+
+//     if (accessToken && refreshToken && userData) {
+//       let cookieOptions = {
+//         httpOnly: true,
+//         secure: config.env === "true",
+//         sameSite: config.env === "true" ? "Strict" : "Lax",
+//         maxAge: parseInt(config.jwt_token_expire) * 1000,
+//       };
+
+//       res.cookie("refreshToken", refreshToken, cookieOptions);
+//       res.cookie("accessToken", accessToken, cookieOptions);
+//     }
+
+//     sendResponse(res, {
+//       statusCode: httpStatus.OK,
+//       success: true,
+//       message: "User logged in successfully",
+//       data: {
+//         userData,
+//         accessToken,
+//       },
+//     });
+//   }
+// );
 
 const updateUserProfile = catchAsyncError(async (req, res) => {
   const updateData = req.body;
@@ -187,27 +260,30 @@ const updateUserPreference = catchAsyncError(async (req, res) => {
 });
 
 const logout = catchAsyncError(async (req, res) => {
-  // Clear cookies
-  res.clearCookie("accessToken");
-  res.clearCookie("refreshToken");
+  const { userId } = req.user;
+  console.log("logged out id::", req.user);
 
-  // Update last logout time in DB
-  await UserModel.findByIdAndUpdate(req.userId, {
-    $push: {
-      loginHistory: {
-        timestamp: new Date(),
-        ipAddress: req.ip,
-        device: req.headers["user-agent"],
-        type: "logout",
-      },
-    },
-  });
+  try {
+    await userServices.logoutUser(userId || req.user._id);
 
-  sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: "Logged out successfully",
-  });
+    // Clear cookies
+    res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
+
+    return sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Logged out successfully",
+      data: null,
+    });
+  } catch (error) {
+    return sendResponse(res, {
+      statusCode: error.statusCode || httpStatus.INTERNAL_SERVER_ERROR,
+      success: false,
+      message: error.message,
+      data: null,
+    });
+  }
 });
 
 const userController = {

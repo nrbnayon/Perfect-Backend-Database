@@ -5,6 +5,7 @@ const JoiUserValidationSchema = require("./user.validation");
 const userController = require("./user.controller");
 const { authLimiter } = require("../../../Middleware/rateLimit.middleware");
 const { auth } = require("../../../Middleware/auth.middleware");
+const extractUserFromTokenMiddleware = require("../../../Middleware/userVerificationMiddleware");
 
 const router = express.Router();
 
@@ -23,7 +24,8 @@ router.post(
   userController.loginUserUsingEmailOrPhoneAndPassword
 );
 
-router.post("/logout", auth(), userController.logout);
+// router.post("/logout", auth(), userController.logout);
+router.post("/logout", extractUserFromTokenMiddleware, userController.logout);
 
 // Profile routes
 // router.get("/profile", auth(), userController.myProfileUsingToken);

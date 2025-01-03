@@ -88,12 +88,12 @@ const loginUserInToDB = async (payload) => {
 
   if (!email && !phone) {
     throw new ErrorHandler(
-      "Either email or phone is required for login",
-      httpStatus.BAD_REQUEST
+      "Oops! Either email or phone is required to log in. 📧📱",
+      httpStatus.BAD_REQUEST,
+      "⚠️"
     );
   }
 
-  // Enhanced aggregation pipeline with new fields
   const userAggregation = await UserModel.aggregate([
     {
       $match: {
@@ -121,13 +121,18 @@ const loginUserInToDB = async (payload) => {
   const isExistUser = userAggregation[0];
 
   if (!isExistUser) {
-    throw new ErrorHandler("User does not exist", httpStatus.NOT_FOUND);
+    throw new ErrorHandler(
+      "User not found! Are you sure you signed up? 🕵️‍♂️",
+      httpStatus.NOT_FOUND,
+      "🙈"
+    );
   }
 
   if (!isExistUser.emailVerifyCheck) {
     throw new ErrorHandler(
-      "Email is not verified. Please verify your email to log in.",
-      httpStatus.UNAUTHORIZED
+      "Email not verified. Please verify your email to log in. ✉️",
+      httpStatus.UNAUTHORIZED,
+      "📧"
     );
   }
 
@@ -135,14 +140,19 @@ const loginUserInToDB = async (payload) => {
 
   if (!isValidPassword) {
     throw new ErrorHandler(
-      "Please enter a valid password!",
-      httpStatus.UNAUTHORIZED
+      "Invalid password! 🤔 Did you forget it?",
+      httpStatus.UNAUTHORIZED,
+      "🔑"
     );
   }
 
   // Update last login and login history
   await UserModel.findByIdAndUpdate(isExistUser._id, {
-    $set: { lastLogin: new Date() },
+    $set: {
+      lastLogin: new Date(),
+      activeStatus: true,
+      lastActive: new Date(),
+    },
     $push: {
       loginHistory: {
         timestamp: new Date(),
@@ -154,6 +164,7 @@ const loginUserInToDB = async (payload) => {
 
   const tokenPayload = {
     _id: isExistUser._id,
+    userId: isExistUser._id,
     email: isExistUser.email || null,
     phone: isExistUser.phone || null,
   };
@@ -339,6 +350,26 @@ const updateUserPreferences = async (userId, preferences) => {
   return result;
 };
 
+const logoutUser = async (userId) => {
+  const result = await UserModel.findByIdAndUpdate(
+    userId,
+    {
+      $set: {
+        activeStatus: false,
+        lastActive: new Date(),
+        socketId: null,
+      },
+    },
+    { new: true }
+  );
+
+  if (!result) {
+    throw new ErrorHandler("User not found", httpStatus.NOT_FOUND);
+  }
+
+  return result;
+};
+
 const userServices = {
   loginUserInToDB,
   createUserIntoDB,
@@ -350,6 +381,7 @@ const userServices = {
   updateUserEducation,
   addPerformanceReview,
   updateUserPreferences,
+  logoutUser,
 };
 
 module.exports = userServices;
