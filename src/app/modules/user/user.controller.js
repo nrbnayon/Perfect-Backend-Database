@@ -32,7 +32,7 @@ const createUser = catchAsyncError(async (req, res) => {
     return sendResponse(res, {
       statusCode: httpStatus.CREATED,
       success: true,
-      message: "User created successfully",
+      message: `${error?.emoji} ${error?.message} || "🎉 User created successfully 🚀"`,
       data: {
         userData,
         accessToken,
@@ -45,7 +45,7 @@ const createUser = catchAsyncError(async (req, res) => {
     return sendResponse(res, {
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
       success: false,
-      message: "User creation failed",
+      message: `${error?.emoji} ${error?.message} || "User creation failed"`,
       data: { error: error.message },
     });
   }
@@ -81,7 +81,7 @@ const loginUserUsingEmailOrPhoneAndPassword = catchAsyncError(
         return sendResponse(res, {
           statusCode: httpStatus.OK,
           success: true,
-          message: "🎉 User logged in successfully! Welcome back! 🚀",
+          message: `${error?.emoji} ${error?.message} || "🎉 User logged in successfully! Welcome back! 🚀"`,
           data: {
             userData,
             accessToken,
@@ -156,7 +156,7 @@ const updateUserProfile = catchAsyncError(async (req, res) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "User profile updated successfully",
+    message: `${error?.emoji} ${error?.message} || "User profile updated successfully" `,
     data: result,
   });
 });
@@ -171,7 +171,7 @@ const updateUserSkills = catchAsyncError(async (req, res) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Skills updated successfully",
+    message: `${error?.emoji} ${error?.message} || "Skills updated successfully"`,
     data: result,
   });
 });
@@ -185,7 +185,7 @@ const updateUserCertifications = catchAsyncError(async (req, res) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Certifications updated successfully",
+    message: `${error?.emoji} ${error?.message} || "Certifications updated successfully"`,
     data: result,
   });
 });
@@ -199,7 +199,7 @@ const updateUserWorkExperience = catchAsyncError(async (req, res) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Work experience updated successfully",
+    message: `${error?.emoji} ${error?.message} || "Work experience updated successfully"`,
     data: result,
   });
 });
@@ -213,7 +213,7 @@ const updateUserEducation = catchAsyncError(async (req, res) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Education details updated successfully",
+    message: `${error?.emoji} ${error?.message} || "Education details updated successfully"`,
     data: result,
   });
 });
@@ -227,7 +227,7 @@ const addPerformanceReview = catchAsyncError(async (req, res) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "Performance review added successfully",
+    message: `${error?.emoji} ${error?.message} || "Performance review added successfully"`,
     data: result,
   });
 });
@@ -241,7 +241,7 @@ const updateUserPreferences = catchAsyncError(async (req, res) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "User preferences updated successfully",
+    message: `${error?.emoji} ${error?.message} || "User preferences updated successfully"`,
     data: result,
   });
 });
@@ -254,17 +254,17 @@ const updateUserPreference = catchAsyncError(async (req, res) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: "User preferences updated successfully",
+    message: `${error?.emoji} ${error?.message} || "User preferences updated successfully"`,
     data: result,
   });
 });
 
 const logout = catchAsyncError(async (req, res) => {
-  const { userId } = req.user;
-  console.log("logged out id::", req.user);
+  const { _id } = req.user;
+  console.log("logged out id::", _id);
 
   try {
-    await userServices.logoutUser(userId || req.user._id);
+    await userServices.logoutUser(_id || req.user._id || req.user.userId);
 
     // Clear cookies
     res.clearCookie("accessToken");
@@ -273,14 +273,15 @@ const logout = catchAsyncError(async (req, res) => {
     return sendResponse(res, {
       statusCode: httpStatus.OK,
       success: true,
-      message: "Logged out successfully",
+      message: "Logged out successfully 🚀",
       data: null,
     });
   } catch (error) {
+    const errorMessage = `${error?.emoji || ""} ${error?.message || "Error logging out"}`;
     return sendResponse(res, {
       statusCode: error.statusCode || httpStatus.INTERNAL_SERVER_ERROR,
       success: false,
-      message: error.message,
+      message: errorMessage.trim(),
       data: null,
     });
   }

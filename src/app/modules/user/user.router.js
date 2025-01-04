@@ -24,8 +24,8 @@ router.post(
   userController.loginUserUsingEmailOrPhoneAndPassword
 );
 
-// router.post("/logout", auth(), userController.logout);
-router.post("/logout", extractUserFromTokenMiddleware, userController.logout);
+router.post("/logout", auth(), userController.logout);
+// router.post("/logout", extractUserFromTokenMiddleware, userController.logout);
 
 // Profile routes
 // router.get("/profile", auth(), userController.myProfileUsingToken);

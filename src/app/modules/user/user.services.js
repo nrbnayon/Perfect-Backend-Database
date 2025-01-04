@@ -18,8 +18,9 @@ const createUserIntoDB = async (payload) => {
   const isExist = await UserModel.findOne({ $or: [{ phone }, { email }] });
   if (isExist) {
     throw new ErrorHandler(
-      `${isExist.phone} or ${isExist.email} 🤔 Looks like you're already exists! Try logging in instead!`,
-      httpStatus.CONFLICT
+      `${isExist.phone} or ${isExist.email} Looks like you're already exists! Try logging in instead!`,
+      httpStatus.CONFLICT,
+      "🤔"
     );
   }
 
@@ -163,8 +164,7 @@ const loginUserInToDB = async (payload) => {
   });
 
   const tokenPayload = {
-    _id: isExistUser._id,
-    userId: isExistUser._id,
+    id: isExistUser._id.toString(),
     email: isExistUser.email || null,
     phone: isExistUser.phone || null,
   };
@@ -230,25 +230,25 @@ const singleUserFromDB = async (id) => {
   const userId = new mongoose.Types.ObjectId(id);
 
   const pipeline = [
-    {
-      $match: { _id: userId },
-    },
-    {
-      $lookup: {
-        from: "courses",
-        localField: "coursesEnrolled.courseId",
-        foreignField: "_id",
-        as: "enrolledCoursesDetails",
-      },
-    },
-    {
-      $lookup: {
-        from: "users",
-        localField: "performanceReviews.reviewer",
-        foreignField: "_id",
-        as: "reviewersDetails",
-      },
-    },
+    // {
+    //   $match: { _id: userId },
+    // },
+    // {
+    //   $lookup: {
+    //     from: "courses",
+    //     localField: "coursesEnrolled.courseId",
+    //     foreignField: "_id",
+    //     as: "enrolledCoursesDetails",
+    //   },
+    // },
+    // {
+    //   $lookup: {
+    //     from: "users",
+    //     localField: "performanceReviews.reviewer",
+    //     foreignField: "_id",
+    //     as: "reviewersDetails",
+    //   },
+    // },
   ];
 
   const result = await UserModel.aggregate(pipeline);
@@ -364,7 +364,7 @@ const logoutUser = async (userId) => {
   );
 
   if (!result) {
-    throw new ErrorHandler("User not found", httpStatus.NOT_FOUND);
+    throw new ErrorHandler("User not found", httpStatus.NOT_FOUND, "🤔");
   }
 
   return result;

@@ -26,32 +26,35 @@ const auth = (...requiredRoles) => {
 
       // Verify token
       let decoded;
-      console.log("decoded token", decoded);
+
       try {
         decoded = jwt.verify(token, config.jwt_key);
         console.log("decoded token", decoded);
-
-        //   const decoded = jwt.verify(token, config.jwt_key);
       } catch (error) {
         if (error.name === "TokenExpiredError") {
           throw new ErrorHandler(
             "Your session has expired. Please log in again",
-            httpStatus.UNAUTHORIZED
+            httpStatus.UNAUTHORIZED,
+            "⚠️"
           );
         }
         throw new ErrorHandler(
           "Invalid authentication token",
-          httpStatus.UNAUTHORIZED
+          httpStatus.UNAUTHORIZED,
+          "❌"
         );
       }
 
       // Check if user still exists
-      const user = await UserModel.findById(decoded.id || decoded._id);
+      const user = await UserModel.findById(
+        decoded.userId || decoded.id || decoded._id
+      );
 
       if (!user) {
         throw new ErrorHandler(
           "The user belonging to this token no longer exists",
-          httpStatus.UNAUTHORIZED
+          httpStatus.UNAUTHORIZED,
+          "⚠️"
         );
       }
 
@@ -59,7 +62,8 @@ const auth = (...requiredRoles) => {
       if (user.userStatus !== "Active") {
         throw new ErrorHandler(
           "Your account has been deactivated. Please contact support.",
-          httpStatus.FORBIDDEN
+          httpStatus.FORBIDDEN,
+          "⚠️"
         );
       }
 
@@ -67,7 +71,8 @@ const auth = (...requiredRoles) => {
       if (decoded.email && !user.emailVerify) {
         throw new ErrorHandler(
           "Please verify your email to access this resource",
-          httpStatus.FORBIDDEN
+          httpStatus.FORBIDDEN,
+          "⚠️"
         );
       }
 
@@ -79,7 +84,8 @@ const auth = (...requiredRoles) => {
         if (!hasRequiredRole) {
           throw new ErrorHandler(
             "You do not have permission to perform this action",
-            httpStatus.FORBIDDEN
+            httpStatus.FORBIDDEN,
+            "⚠️"
           );
         }
       }
@@ -88,13 +94,14 @@ const auth = (...requiredRoles) => {
       if (requiredRoles.includes("admin") && !user.isAdmin) {
         throw new ErrorHandler(
           "This route is restricted to administrators",
-          httpStatus.FORBIDDEN
+          httpStatus.FORBIDDEN,
+          "⚠️"
         );
       }
 
       // If all checks pass, set user info in request
       req.user = user;
-      req.userId = user._id;
+      req.userId = user._id.toString();
       req.userRole = user.role;
       req.isAdmin = user.isAdmin;
 
@@ -141,7 +148,7 @@ const refreshToken = async (req, res, next) => {
 
     // Generate new access token
     const accessToken = jwt.sign(
-      { id: user._id, email: user.email },
+      { id: user._id.toString(), email: user.email },
       config.jwt_key,
       { expiresIn: config.jwt_token_expire }
     );
@@ -154,7 +161,7 @@ const refreshToken = async (req, res, next) => {
       maxAge: parseInt(config.jwt_token_expire) * 1000,
     });
 
-    req.user = user;
+    req.user = decoded || user;
     req.userId = user._id;
     next();
   } catch (error) {
