@@ -16,13 +16,28 @@ const createUserIntoDB = async (payload) => {
 
   // Check if the phone or email already exists
   const isExist = await UserModel.findOne({ $or: [{ phone }, { email }] });
+
   if (isExist) {
-    throw new ErrorHandler(
-      `${isExist.phone} or ${isExist.email} Looks like you're already exists! Try logging in instead!`,
-      httpStatus.CONFLICT,
-      "🤔"
-    );
+    // If user exists and email is verified, prevent registration
+    if (isExist.emailVerify) {
+      throw new ErrorHandler(
+        `${isExist.phone} or ${isExist.email} already exists! Try logging in instead!`,
+        httpStatus.CONFLICT,
+        "🤔"
+      );
+    }
+
+    // If email is not verified, delete the existing user
+    await UserModel.deleteOne({ _id: isExist._id });
   }
+
+  // if (isExist) {
+  //   throw new ErrorHandler(
+  //     `${isExist.phone} or ${isExist.email} Looks like you're already exists! Try logging in instead!`,
+  //     httpStatus.CONFLICT,
+  //     "🤔"
+  //   );
+  // }
 
   const plainPassword = password;
   const hashPassword = await bcrypt.hash(password, 10);
@@ -225,6 +240,20 @@ const updateUserProfileIntoDB = async (userId, updateData) => {
   return result;
 };
 
+const getMyProfileFromDB = async (userId) => {
+  console.log("userId", userId);
+  if (!userId) {
+    throw new ErrorHandler("User ID is required", httpStatus.BAD_REQUEST, "⚠️");
+  }
+
+  const userProfile = await UserModel.findById(userId).select("-password -__v");
+  if (!userProfile) {
+    throw new ErrorHandler("User not found", httpStatus.NOT_FOUND, "❌");
+  }
+
+  return userProfile;
+};
+
 // Enhanced single user fetch with new fields
 const singleUserFromDB = async (id) => {
   const userId = new mongoose.Types.ObjectId(id);
@@ -370,6 +399,14 @@ const logoutUser = async (userId) => {
   return result;
 };
 
+const getOnlineUsers = async () => {
+  const onlineUsers = await UserModel.find(
+    { activeStatus: true },
+    "firstname lastname username email activeStatus lastActive"
+  );
+  return onlineUsers;
+};
+
 const userServices = {
   loginUserInToDB,
   createUserIntoDB,
@@ -382,6 +419,8 @@ const userServices = {
   addPerformanceReview,
   updateUserPreferences,
   logoutUser,
+  getOnlineUsers,
+  getMyProfileFromDB,
 };
 
 module.exports = userServices;

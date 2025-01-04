@@ -32,7 +32,7 @@ const createUser = catchAsyncError(async (req, res) => {
     return sendResponse(res, {
       statusCode: httpStatus.CREATED,
       success: true,
-      message: `${error?.emoji} ${error?.message} || "🎉 User created successfully 🚀"`,
+      message: "🎉 User created successfully 🚀",
       data: {
         userData,
         accessToken,
@@ -45,7 +45,7 @@ const createUser = catchAsyncError(async (req, res) => {
     return sendResponse(res, {
       statusCode: httpStatus.INTERNAL_SERVER_ERROR,
       success: false,
-      message: `${error?.emoji} ${error?.message} || "User creation failed"`,
+      message: `${error?.emoji} ${error?.message}`,
       data: { error: error.message },
     });
   }
@@ -81,7 +81,7 @@ const loginUserUsingEmailOrPhoneAndPassword = catchAsyncError(
         return sendResponse(res, {
           statusCode: httpStatus.OK,
           success: true,
-          message: `${error?.emoji} ${error?.message} || "🎉 User logged in successfully! Welcome back! 🚀"`,
+          message: "🎉 User logged in successfully! Welcome back! 🚀",
           data: {
             userData,
             accessToken,
@@ -245,6 +245,7 @@ const updateUserPreferences = catchAsyncError(async (req, res) => {
     data: result,
   });
 });
+
 const updateUserPreference = catchAsyncError(async (req, res) => {
   const result = await userServices.updateUserPreferences(
     req.userId,
@@ -261,7 +262,6 @@ const updateUserPreference = catchAsyncError(async (req, res) => {
 
 const logout = catchAsyncError(async (req, res) => {
   const { _id } = req.user;
-  console.log("logged out id::", _id);
 
   try {
     await userServices.logoutUser(_id || req.user._id || req.user.userId);
@@ -287,11 +287,43 @@ const logout = catchAsyncError(async (req, res) => {
   }
 });
 
+const getOnlineUsersList = catchAsyncError(async (req, res) => {
+  const onlineUsers = await userServices.getOnlineUsers();
+
+  return sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: "Online users retrieved successfully",
+    data: onlineUsers,
+  });
+});
+
+const myProfileUsingToken = catchAsyncError(async (req, res, next) => {
+  const userId = req.user?._id;
+
+  if (!userId) {
+    return next(
+      new ErrorHandler("User not authenticated", httpStatus.UNAUTHORIZED, "⚠️")
+    );
+  }
+
+  try {
+    const myProfile = await userServices.getMyProfileFromDB(userId);
+    res.status(httpStatus.OK).json({
+      success: true,
+      message: "Profile retrieved successfully",
+      data: myProfile,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 const userController = {
   createUser,
   loginUserUsingEmailOrPhoneAndPassword,
   updateUserProfile,
-  // myProfileUsingToken,
+  myProfileUsingToken,
   updateUserSkills,
   updateUserCertifications,
   updateUserWorkExperience,
@@ -299,6 +331,7 @@ const userController = {
   addPerformanceReview,
   updateUserPreference,
   logout,
+  getOnlineUsersList,
 };
 
 module.exports = userController;

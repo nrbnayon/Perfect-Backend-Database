@@ -27,8 +27,10 @@ router.post(
 router.post("/logout", auth(), userController.logout);
 // router.post("/logout", extractUserFromTokenMiddleware, userController.logout);
 
+router.get("/online-users", auth(), userController.getOnlineUsersList);
+
 // Profile routes
-// router.get("/profile", auth(), userController.myProfileUsingToken);
+router.get("/profile", auth(), userController.myProfileUsingToken);
 
 // router.put(
 //   "/profile",
