@@ -100,7 +100,7 @@ const createUserIntoDB = async (payload) => {
 };
 
 const loginUserInToDB = async (payload) => {
-  const { phone, email, password } = payload;
+  const { phone, email, password, ip, userAgent } = payload;
 
   if (!email && !phone) {
     throw new ErrorHandler(
@@ -162,19 +162,40 @@ const loginUserInToDB = async (payload) => {
     );
   }
 
-  // Update last login and login history
+  // Update login history
+  const existingHistory = isExistUser.loginHistory?.find(
+    (history) => history.ipAddress === ip && history.device === userAgent
+  );
+
+  if (existingHistory) {
+    // Update timestamp for the existing entry
+    await UserModel.updateOne(
+      { _id: isExistUser._id, "loginHistory._id": existingHistory._id },
+      {
+        $set: {
+          "loginHistory.$.timestamp": new Date(),
+        },
+      }
+    );
+  } else {
+    // Add a new entry to loginHistory
+    await UserModel.findByIdAndUpdate(isExistUser._id, {
+      $push: {
+        loginHistory: {
+          timestamp: new Date(),
+          ipAddress: ip || "unknown",
+          device: userAgent || "unknown",
+        },
+      },
+    });
+  }
+
+  // Update last login and status
   await UserModel.findByIdAndUpdate(isExistUser._id, {
     $set: {
       lastLogin: new Date(),
       activeStatus: true,
       lastActive: new Date(),
-    },
-    $push: {
-      loginHistory: {
-        timestamp: new Date(),
-        ipAddress: payload.ip || "unknown",
-        device: payload.userAgent || "unknown",
-      },
     },
   });
 
@@ -202,6 +223,110 @@ const loginUserInToDB = async (payload) => {
     refreshToken,
   };
 };
+
+// const loginUserInToDB = async (payload) => {
+//   const { phone, email, password } = payload;
+
+//   if (!email && !phone) {
+//     throw new ErrorHandler(
+//       "Oops! Either email or phone is required to log in. 📧📱",
+//       httpStatus.BAD_REQUEST,
+//       "⚠️"
+//     );
+//   }
+
+//   const userAggregation = await UserModel.aggregate([
+//     {
+//       $match: {
+//         $or: [{ email }, { phone }],
+//       },
+//     },
+//     {
+//       $addFields: {
+//         emailVerifyCheck: {
+//           $cond: {
+//             if: {
+//               $and: [
+//                 { $eq: ["$email", email] },
+//                 { $eq: ["$emailVerify", false] },
+//               ],
+//             },
+//             then: false,
+//             else: true,
+//           },
+//         },
+//       },
+//     },
+//   ]);
+
+//   const isExistUser = userAggregation[0];
+
+//   if (!isExistUser) {
+//     throw new ErrorHandler(
+//       "User not found! Are you sure you signed up? 🕵️‍♂️",
+//       httpStatus.NOT_FOUND,
+//       "🙈"
+//     );
+//   }
+
+//   if (!isExistUser.emailVerifyCheck) {
+//     throw new ErrorHandler(
+//       "Email not verified. Please verify your email to log in. ✉️",
+//       httpStatus.UNAUTHORIZED,
+//       "📧"
+//     );
+//   }
+
+//   const isValidPassword = await bcrypt.compare(password, isExistUser.password);
+
+//   if (!isValidPassword) {
+//     throw new ErrorHandler(
+//       "Invalid password! 🤔 Did you forget it?",
+//       httpStatus.UNAUTHORIZED,
+//       "🔑"
+//     );
+//   }
+
+//   // Update last login and login history
+//   await UserModel.findByIdAndUpdate(isExistUser._id, {
+//     $set: {
+//       lastLogin: new Date(),
+//       activeStatus: true,
+//       lastActive: new Date(),
+//     },
+//     $push: {
+//       loginHistory: {
+//         timestamp: new Date(),
+//         ipAddress: payload.ip || "unknown",
+//         device: payload.userAgent || "unknown",
+//       },
+//     },
+//   });
+
+//   const tokenPayload = {
+//     id: isExistUser._id.toString(),
+//     email: isExistUser.email || null,
+//     phone: isExistUser.phone || null,
+//   };
+
+//   const accessToken = await jwtHandle(
+//     tokenPayload,
+//     config.jwt_key,
+//     config.jwt_token_expire
+//   );
+
+//   const refreshToken = await jwtHandle(
+//     tokenPayload,
+//     config.jwt_refresh_key,
+//     config.jwt_refresh_token_expire
+//   );
+
+//   return {
+//     userData: isExistUser,
+//     accessToken,
+//     refreshToken,
+//   };
+// };
 
 // Enhanced update profile function with support for new fields
 const updateUserProfileIntoDB = async (userId, updateData) => {
@@ -240,47 +365,28 @@ const updateUserProfileIntoDB = async (userId, updateData) => {
   return result;
 };
 
-const getMyProfileFromDB = async (userId) => {
-  console.log("userId", userId);
-  if (!userId) {
-    throw new ErrorHandler("User ID is required", httpStatus.BAD_REQUEST, "⚠️");
+const getMyProfileFromDB = async (id) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ErrorHandler("Invalid user ID", httpStatus.BAD_REQUEST, "⚠️");
   }
 
-  const userProfile = await UserModel.findById(userId).select("-password -__v");
-  if (!userProfile) {
-    throw new ErrorHandler("User not found", httpStatus.NOT_FOUND, "❌");
-  }
-
-  return userProfile;
-};
-
-// Enhanced single user fetch with new fields
-const singleUserFromDB = async (id) => {
   const userId = new mongoose.Types.ObjectId(id);
 
   const pipeline = [
-    // {
-    //   $match: { _id: userId },
-    // },
-    // {
-    //   $lookup: {
-    //     from: "courses",
-    //     localField: "coursesEnrolled.courseId",
-    //     foreignField: "_id",
-    //     as: "enrolledCoursesDetails",
-    //   },
-    // },
-    // {
-    //   $lookup: {
-    //     from: "users",
-    //     localField: "performanceReviews.reviewer",
-    //     foreignField: "_id",
-    //     as: "reviewersDetails",
-    //   },
-    // },
+    { $match: { _id: userId } },
+    {
+      $project: {
+        password: 0,
+        __v: 0,
+      },
+    },
   ];
 
   const result = await UserModel.aggregate(pipeline);
+
+  if (!result.length) {
+    throw new ErrorHandler("User not found", httpStatus.NOT_FOUND, "❌");
+  }
 
   return {
     data: result[0] || null,
@@ -410,7 +516,6 @@ const getOnlineUsers = async () => {
 const userServices = {
   loginUserInToDB,
   createUserIntoDB,
-  singleUserFromDB,
   updateUserProfileIntoDB,
   updateUserSkills,
   updateUserCertifications,
