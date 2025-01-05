@@ -32,12 +32,12 @@ router.get("/online-users", auth(), userController.getOnlineUsersList);
 // Profile routes
 router.get("/profile", auth(), userController.myProfileUsingToken);
 
-// router.put(
+router.put(
   "/profile",
   auth(),
-//   validateRequest(JoiUserValidationSchema.updateProfileSchema),
-//   userController.updateUserProfile
-// );
+  validateRequest(JoiUserValidationSchema.updateProfileSchema),
+  userController.updateUserProfile
+);
 
 // Skills and certifications routes
 // router.put(
