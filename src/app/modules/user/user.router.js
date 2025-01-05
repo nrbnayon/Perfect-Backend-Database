@@ -33,7 +33,7 @@ router.get("/online-users", auth(), userController.getOnlineUsersList);
 router.get("/profile", auth(), userController.myProfileUsingToken);
 
 // router.put(
-//   "/profile",
+  "/profile",
   auth(),
 //   validateRequest(JoiUserValidationSchema.updateProfileSchema),
 //   userController.updateUserProfile
