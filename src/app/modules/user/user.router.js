@@ -34,7 +34,7 @@ router.get("/profile", auth(), userController.myProfileUsingToken);
 
 // router.put(
 //   "/profile",
-//   auth(),
+  auth(),
 //   validateRequest(JoiUserValidationSchema.updateProfileSchema),
 //   userController.updateUserProfile
 // );
