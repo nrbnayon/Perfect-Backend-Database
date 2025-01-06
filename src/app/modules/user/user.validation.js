@@ -257,7 +257,6 @@ const updateProfileSchema = Joi.object({
   firstname: Joi.string(),
   lastname: Joi.string(),
   username: Joi.string(),
-  email: Joi.string().email(),
   phone: Joi.string()
     .trim()
     .custom((value, helpers) => {
