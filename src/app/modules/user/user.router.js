@@ -5,7 +5,7 @@ const JoiUserValidationSchema = require("./user.validation");
 const userController = require("./user.controller");
 const { authLimiter } = require("../../../Middleware/rateLimit.middleware");
 const { auth } = require("../../../Middleware/auth.middleware");
-const extractUserFromTokenMiddleware = require("../../../Middleware/userVerificationMiddleware");
+// const extractUserFromTokenMiddleware = require("../../../Middleware/userVerificationMiddleware");
 
 const router = express.Router();
 
