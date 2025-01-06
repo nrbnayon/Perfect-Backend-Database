@@ -40,12 +40,12 @@ router.put(
 );
 
 // Skills and certifications routes
-// router.put(
-//   "/skills",
-//   auth(),
-//   validateRequest(JoiUserValidationSchema.skillSchema),
-//   userController.updateUserSkills
-// );
+router.put(
+  "/skills",
+  auth(),
+  validateRequest(JoiUserValidationSchema.skillSchema),
+  userController.updateUserSkills
+);
 
 // router.put(
 //   "/certifications",
