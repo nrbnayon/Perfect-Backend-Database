@@ -10,6 +10,7 @@ const ErrorHandler = require("../../../ErrorHandler/errorHandler");
 const passwordRefServices = require("../passwordRef/passwordRef.service");
 const otpService = require("../otp/otp.services");
 const PasswordResetToken = require("../../../Middleware/PasswordResetToken");
+const { sendMail } = require("../../../utility/Emails");
 
 // Enhanced user services with new field support
 const createUserIntoDB = async (payload) => {
@@ -394,7 +395,7 @@ const forgotPasswordInDB = async (email) => {
     );
   }
 
-  await PasswordResetToken.deleteMany({ user: user._id });
+  await PasswordResetToken.deleteMany({ user: isExistUser._id });
 
   const tokenPayload = {
     id: isExistUser._id.toString(),
@@ -402,11 +403,7 @@ const forgotPasswordInDB = async (email) => {
     phone: isExistUser.phone || null,
   };
 
-  // const resetToken = await jwtHandle(
-  //   tokenPayload,
-  //   config.jwt_key,
-  //   config.jwt_token_expire
-  // );
+  console.log("tokenPayload", tokenPayload);
 
   const resetToken = await jwtHandle(
     tokenPayload,
@@ -417,35 +414,31 @@ const forgotPasswordInDB = async (email) => {
   const hashedToken = await bcrypt.hash(resetToken, 10);
 
   await PasswordResetToken.create({
-    user: user._id,
+    user: isExistUser._id,
     token: hashedToken,
     expiresAt: new Date(
       Date.now() + parseInt(config.jwt_reset_token_expire) * 1000
     ),
   });
 
-  const resetUrl = `${config.frontend_url}/reset-password/${user._id}/${resetToken}`;
+  const resetUrl = `${config.frontend_url}/reset-password/${isExistUser._id}/${resetToken}`;
   const emailContent = `
-    <h2>Hello ${user.firstname}!</h2>
+    <h2>Hello ${isExistUser.firstname}!</h2>
     <p>You requested to reset your password.</p>
     <p>Click the link below to reset your password:</p>
     <a href="${resetUrl}" style="padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">Reset Password</a>
     <p>If you didn't request this, please ignore this email.</p>
-    <p>This link will expire in ${parseInt(config.jwt_reset_token_expire) / 3600} hours.</p>
+    <p>This link will expire in 5 minutes.</p>
   `;
 
   try {
-    await sendMail({
-      email: user.email,
-      subject: "Password Reset Request",
-      html: emailContent,
-    });
+    await sendMail(isExistUser.email, "Password Reset Request", emailContent);
 
     return {
       message: "Password reset link sent to email",
     };
   } catch (error) {
-    await PasswordResetToken.deleteMany({ user: user._id });
+    await PasswordResetToken.deleteMany({ user: isExistUser._id });
     throw new ErrorHandler(
       "Error sending password reset email",
       httpStatus.INTERNAL_SERVER_ERROR,

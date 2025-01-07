@@ -8,6 +8,7 @@ const transporter = nodemailer.createTransport(config.email.smtp);
 
 // Function to send an email
 exports.sendMail = async (receiverEmail, subject, body) => {
+  // console.log("Email send: ", receiverEmail, subject, body);
   try {
     if (!process.env.EMAIL || !process.env.PASSWORD) {
       throw new Error("Email credentials are missing.");
