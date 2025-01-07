@@ -22,9 +22,11 @@ module.exports = {
   jwt_key: process.env.JWT_SECRET_KEY,
   jwt_key_vendor: process.env.JWT_SECRET_KEY_FOR_VENDOR,
   jwt_refresh_key: process.env.JWT_REFRESH_KEY,
-  jwt_refresh_token_expire: process.env.JWT_REFRESH_TOKEN_EXPIRE,
+  jwt_refresh_token_expire: process.env.JWT_SECRET_KEY,
+  jwt_reset_key: process.env.JWT_RESET_KEY,
   jwt_token_expire: process.env.JWT_TOKEN_EXPIRE,
   bcrypt_salt_rounds: process.env.SOLT_ROUND,
+  jwt_reset_token_expire: process.env.JWT_RESET_TOKEN_EXPIRE || "1h",
 
   /**
    * Google Drive Integration Settings
@@ -64,6 +66,7 @@ module.exports = {
    * Essential URLs for frontend integration and image handling
    */
   origin: process.env.ORIGIN,
+  frontend_url: process.env.ORIGIN || "http://localhost:3000",
   imageServerURL: process.env.IMAGE_SERVER_URL,
 
   /**

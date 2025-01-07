@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 
 const jwtHandle = async (payload, secret, expireTime) => {
-  // console.log("secret...:", secret);
+  console.log("secret...:", secret);
   const token = jwt.sign(
     {
       phone: payload?.phone,

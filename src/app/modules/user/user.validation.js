@@ -299,13 +299,33 @@ const forgotPasswordSchema = Joi.object({
   }),
 });
 
+const resetPasswordSchema = Joi.object({
+  userId: Joi.string().required(),
+  token: Joi.string().required(),
+  newPassword: Joi.string()
+    .min(8)
+    .required()
+    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+    .messages({
+      "string.min": "Password must be at least 8 characters long 📏",
+      "string.pattern.base":
+        "Password must contain at least one uppercase letter, one lowercase letter, and one number 🔒",
+    }),
+  confirmPassword: Joi.string()
+    .valid(Joi.ref("newPassword"))
+    .required()
+    .messages({
+      "any.only": "Passwords must match",
+    }),
+});
+
 const JoiUserValidationSchema = {
   loginSchema,
   userCreateSchema,
-  // resetPasswordSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
   updateProfileSchema,
   // Export individual schemas for specific validations
-  forgotPasswordSchema,
   skillSchema,
   certificationSchema,
   workExperienceSchema,

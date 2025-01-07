@@ -263,6 +263,7 @@ const updateUserPreference = catchAsyncError(async (req, res) => {
 // forgot password
 
 const forgotPassword = catchAsyncError(async (req, res) => {
+  console.log("first time forgot password", req.body);
   try {
     const { email } = req.body;
     const result = await userServices.forgotPasswordInDB(email);
@@ -284,10 +285,12 @@ const forgotPassword = catchAsyncError(async (req, res) => {
 });
 
 const resetPassword = catchAsyncError(async (req, res) => {
+  console.log("reset password", req.body);
+  const { _id } = req.user;
   try {
     const { token, userId, newPassword } = req.body;
     const result = await userServices.resetPasswordInDB(
-      userId,
+      _id || userId,
       token,
       newPassword
     );

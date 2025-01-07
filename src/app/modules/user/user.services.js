@@ -9,6 +9,7 @@ const config = require("../../../config/config");
 const ErrorHandler = require("../../../ErrorHandler/errorHandler");
 const passwordRefServices = require("../passwordRef/passwordRef.service");
 const otpService = require("../otp/otp.services");
+const PasswordResetToken = require("../../../Middleware/PasswordResetToken");
 
 // Enhanced user services with new field support
 const createUserIntoDB = async (payload) => {
@@ -224,111 +225,6 @@ const loginUserInToDB = async (payload) => {
   };
 };
 
-// const loginUserInToDB = async (payload) => {
-//   const { phone, email, password } = payload;
-
-//   if (!email && !phone) {
-//     throw new ErrorHandler(
-//       "Oops! Either email or phone is required to log in. 📧📱",
-//       httpStatus.BAD_REQUEST,
-//       "⚠️"
-//     );
-//   }
-
-//   const userAggregation = await UserModel.aggregate([
-//     {
-//       $match: {
-//         $or: [{ email }, { phone }],
-//       },
-//     },
-//     {
-//       $addFields: {
-//         emailVerifyCheck: {
-//           $cond: {
-//             if: {
-//               $and: [
-//                 { $eq: ["$email", email] },
-//                 { $eq: ["$emailVerify", false] },
-//               ],
-//             },
-//             then: false,
-//             else: true,
-//           },
-//         },
-//       },
-//     },
-//   ]);
-
-//   const isExistUser = userAggregation[0];
-
-//   if (!isExistUser) {
-//     throw new ErrorHandler(
-//       "User not found! Are you sure you signed up? 🕵️‍♂️",
-//       httpStatus.NOT_FOUND,
-//       "🙈"
-//     );
-//   }
-
-//   if (!isExistUser.emailVerifyCheck) {
-//     throw new ErrorHandler(
-//       "Email not verified. Please verify your email to log in. ✉️",
-//       httpStatus.UNAUTHORIZED,
-//       "📧"
-//     );
-//   }
-
-//   const isValidPassword = await bcrypt.compare(password, isExistUser.password);
-
-//   if (!isValidPassword) {
-//     throw new ErrorHandler(
-//       "Invalid password! 🤔 Did you forget it?",
-//       httpStatus.UNAUTHORIZED,
-//       "🔑"
-//     );
-//   }
-
-//   // Update last login and login history
-//   await UserModel.findByIdAndUpdate(isExistUser._id, {
-//     $set: {
-//       lastLogin: new Date(),
-//       activeStatus: true,
-//       lastActive: new Date(),
-//     },
-//     $push: {
-//       loginHistory: {
-//         timestamp: new Date(),
-//         ipAddress: payload.ip || "unknown",
-//         device: payload.userAgent || "unknown",
-//       },
-//     },
-//   });
-
-//   const tokenPayload = {
-//     id: isExistUser._id.toString(),
-//     email: isExistUser.email || null,
-//     phone: isExistUser.phone || null,
-//   };
-
-//   const accessToken = await jwtHandle(
-//     tokenPayload,
-//     config.jwt_key,
-//     config.jwt_token_expire
-//   );
-
-//   const refreshToken = await jwtHandle(
-//     tokenPayload,
-//     config.jwt_refresh_key,
-//     config.jwt_refresh_token_expire
-//   );
-
-//   return {
-//     userData: isExistUser,
-//     accessToken,
-//     refreshToken,
-//   };
-// };
-
-// Enhanced update profile function with support for new fields
 const updateUserProfileIntoDB = async (userId, updateData) => {
   // Validate specific field updates
   if (updateData.skills) {
@@ -485,6 +381,129 @@ const updateUserPreferences = async (userId, preferences) => {
   return result;
 };
 
+// forgot password
+
+const forgotPasswordInDB = async (email) => {
+  const isExistUser = await UserModel.findOne({ email, emailVerify: true });
+
+  if (!isExistUser) {
+    throw new ErrorHandler(
+      "No verified user found with this email address! 📭",
+      httpStatus.NOT_FOUND,
+      "❌"
+    );
+  }
+
+  await PasswordResetToken.deleteMany({ user: user._id });
+
+  const tokenPayload = {
+    id: isExistUser._id.toString(),
+    email: isExistUser.email || null,
+    phone: isExistUser.phone || null,
+  };
+
+  // const resetToken = await jwtHandle(
+  //   tokenPayload,
+  //   config.jwt_key,
+  //   config.jwt_token_expire
+  // );
+
+  const resetToken = await jwtHandle(
+    tokenPayload,
+    config.jwt_reset_key,
+    config.jwt_reset_token_expire
+  );
+
+  const hashedToken = await bcrypt.hash(resetToken, 10);
+
+  await PasswordResetToken.create({
+    user: user._id,
+    token: hashedToken,
+    expiresAt: new Date(
+      Date.now() + parseInt(config.jwt_reset_token_expire) * 1000
+    ),
+  });
+
+  const resetUrl = `${config.frontend_url}/reset-password/${user._id}/${resetToken}`;
+  const emailContent = `
+    <h2>Hello ${user.firstname}!</h2>
+    <p>You requested to reset your password.</p>
+    <p>Click the link below to reset your password:</p>
+    <a href="${resetUrl}" style="padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">Reset Password</a>
+    <p>If you didn't request this, please ignore this email.</p>
+    <p>This link will expire in ${parseInt(config.jwt_reset_token_expire) / 3600} hours.</p>
+  `;
+
+  try {
+    await sendMail({
+      email: user.email,
+      subject: "Password Reset Request",
+      html: emailContent,
+    });
+
+    return {
+      message: "Password reset link sent to email",
+    };
+  } catch (error) {
+    await PasswordResetToken.deleteMany({ user: user._id });
+    throw new ErrorHandler(
+      "Error sending password reset email",
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "📧"
+    );
+  }
+};
+
+const resetPasswordInDB = async (userId, token, newPassword) => {
+  const passwordResetToken = await PasswordResetToken.findOne({
+    user: userId,
+    expiresAt: { $gt: new Date() },
+  });
+
+  if (!passwordResetToken) {
+    throw new ErrorHandler(
+      "Invalid or expired password reset token",
+      httpStatus.BAD_REQUEST,
+      "⌛"
+    );
+  }
+
+  // Verify token
+  const isValidToken = await bcrypt.compare(token, passwordResetToken.token);
+  if (!isValidToken) {
+    throw new ErrorHandler(
+      "Invalid password reset token",
+      httpStatus.BAD_REQUEST,
+      "🔑"
+    );
+  }
+
+  // Hash new password
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  // Update user's password
+  const user = await UserModel.findByIdAndUpdate(
+    userId,
+    {
+      $set: {
+        password: hashedPassword,
+      },
+    },
+    { new: true }
+  );
+
+  if (!user) {
+    throw new ErrorHandler("User not found", httpStatus.NOT_FOUND, "👤");
+  }
+
+  // Delete the used token
+  await PasswordResetToken.deleteMany({ user: userId });
+
+  return {
+    message: "Password reset successful",
+  };
+};
+
 const logoutUser = async (userId) => {
   const result = await UserModel.findByIdAndUpdate(
     userId,
@@ -523,6 +542,8 @@ const userServices = {
   updateUserEducation,
   addPerformanceReview,
   updateUserPreferences,
+  forgotPasswordInDB,
+  resetPasswordInDB,
   logoutUser,
   getOnlineUsers,
   getMyProfileFromDB,
