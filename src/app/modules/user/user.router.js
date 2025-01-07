@@ -39,13 +39,38 @@ router.put(
   userController.updateUserProfile
 );
 
-// Skills and certifications routes
-router.put(
-  "/skills",
-  auth(),
-  validateRequest(JoiUserValidationSchema.skillSchema),
-  userController.updateUserSkills
+// router.post(
+//   "/change-password",
+//   auth(),
+//   validateRequest(JoiUserValidationSchema.changePasswordSchema)
+// );
+
+// router.post(
+//   "/reset-password",
+//   auth(),
+//   validateRequest(JoiUserValidationSchema.resetPasswordSchema)
+// );
+
+// Password reset routes
+router.post(
+  "/forgot-password",
+  validateRequest(JoiUserValidationSchema.forgotPasswordSchema),
+  userController.forgotPassword
 );
+
+router.post(
+  "/reset-password",
+  validateRequest(JoiUserValidationSchema.forgotPasswordSchema),
+  userController.resetPassword
+);
+
+// Skills and certifications routes
+// router.put(
+//   "/skills",
+//   auth(),
+//   validateRequest(JoiUserValidationSchema.skillSchema),
+//   userController.updateUserSkills
+// );
 
 // router.put(
 //   "/certifications",

@@ -291,12 +291,21 @@ const updateProfileSchema = Joi.object({
     "object.unknown": "Invalid field provided",
   });
 
+const forgotPasswordSchema = Joi.object({
+  email: Joi.string().required().email().messages({
+    "string.empty": "Email is required",
+    "any.required": "Email is required",
+    "string.email": "Invalid email format",
+  }),
+});
+
 const JoiUserValidationSchema = {
   loginSchema,
   userCreateSchema,
   // resetPasswordSchema,
   updateProfileSchema,
   // Export individual schemas for specific validations
+  forgotPasswordSchema,
   skillSchema,
   certificationSchema,
   workExperienceSchema,

@@ -260,6 +260,54 @@ const updateUserPreference = catchAsyncError(async (req, res) => {
   });
 });
 
+// forgot password
+
+const forgotPassword = catchAsyncError(async (req, res) => {
+  try {
+    const { email } = req.body;
+    const result = await userServices.forgotPasswordInDB(email);
+
+    return sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Password reset link sent successfully! 📧",
+      data: result,
+    });
+  } catch (error) {
+    return sendResponse(res, {
+      statusCode: error.statusCode || httpStatus.INTERNAL_SERVER_ERROR,
+      success: false,
+      message: `${error?.emoji || "😢"} ${error.message}`,
+      data: null,
+    });
+  }
+});
+
+const resetPassword = catchAsyncError(async (req, res) => {
+  try {
+    const { token, userId, newPassword } = req.body;
+    const result = await userServices.resetPasswordInDB(
+      userId,
+      token,
+      newPassword
+    );
+
+    return sendResponse(res, {
+      statusCode: httpStatus.OK,
+      success: true,
+      message: "Password reset successfully! 🔐",
+      data: result,
+    });
+  } catch (error) {
+    return sendResponse(res, {
+      statusCode: error.statusCode || httpStatus.INTERNAL_SERVER_ERROR,
+      success: false,
+      message: `${error?.emoji || "😢"} ${error.message}`,
+      data: null,
+    });
+  }
+});
+
 const logout = catchAsyncError(async (req, res) => {
   const { _id } = req.user;
 
@@ -330,6 +378,8 @@ const userController = {
   updateUserEducation,
   addPerformanceReview,
   updateUserPreference,
+  forgotPassword,
+  resetPassword,
   logout,
   getOnlineUsersList,
 };
