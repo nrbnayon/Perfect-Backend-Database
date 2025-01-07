@@ -61,7 +61,7 @@ router.post(
 router.post(
   "/reset-password",
   auth(),
-  validateRequest(JoiUserValidationSchema.forgotPasswordSchema),
+  validateRequest(JoiUserValidationSchema.resetPasswordSchema),
   userController.resetPassword
 );
 
