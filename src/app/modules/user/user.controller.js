@@ -285,12 +285,22 @@ const forgotPassword = catchAsyncError(async (req, res) => {
 });
 
 const resetPassword = catchAsyncError(async (req, res) => {
-  console.log("reset password", req.body);
-  const { _id } = req.user;
   try {
-    const { token, userId, newPassword } = req.body;
+    const { token, newPassword, confirmPassword } = req.body;
+
+    // If using `auth()`, get user ID from `req.user`, else use `req.body.userId`
+    const userId = req.user?._id || req.body.userId;
+
+    if (newPassword !== confirmPassword) {
+      throw new ErrorHandler(
+        "Passwords must match",
+        httpStatus.BAD_REQUEST,
+        "❌"
+      );
+    }
+
     const result = await userServices.resetPasswordInDB(
-      _id || userId,
+      userId,
       token,
       newPassword
     );

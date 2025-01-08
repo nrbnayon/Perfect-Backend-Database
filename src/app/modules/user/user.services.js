@@ -435,7 +435,7 @@ const forgotPasswordInDB = async (email) => {
     await sendMail(isExistUser.email, "Password Reset Request", emailContent);
 
     return {
-      message: "Password reset link sent to email",
+      message: "Password reset link sent to email 📧",
     };
   } catch (error) {
     await PasswordResetToken.deleteMany({ user: isExistUser._id });
@@ -493,7 +493,7 @@ const resetPasswordInDB = async (userId, token, newPassword) => {
   await PasswordResetToken.deleteMany({ user: userId });
 
   return {
-    message: "Password reset successful",
+    message: "Password reset successful 🔐",
   };
 };
 
