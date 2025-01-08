@@ -325,7 +325,7 @@ const JoiUserValidationSchema = {
   forgotPasswordSchema,
   resetPasswordSchema,
   updateProfileSchema,
-  // Export individual schemas for specific validations
+  // Expor individual schemas for specific validations
   skillSchema,
   certificationSchema,
   workExperienceSchema,
