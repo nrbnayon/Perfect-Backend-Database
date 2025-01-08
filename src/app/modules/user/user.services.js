@@ -2,6 +2,8 @@
 const httpStatus = require("http-status");
 const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");
+const jwt = require("jsonwebtoken");
+const moment = require("moment");
 
 const UserModel = require("./user.model");
 const jwtHandle = require("../../../shared/createToken");
@@ -385,7 +387,10 @@ const updateUserPreferences = async (userId, preferences) => {
 // forgot password
 
 const forgotPasswordInDB = async (email) => {
+  console.log("Initiating password reset for email:", email);
+
   const isExistUser = await UserModel.findOne({ email, emailVerify: true });
+  console.log("Found user:", isExistUser ? "Yes" : "No");
 
   if (!isExistUser) {
     throw new ErrorHandler(
@@ -395,32 +400,42 @@ const forgotPasswordInDB = async (email) => {
     );
   }
 
+  // Clear previous tokens for the user
+  console.log("Clearing previous reset tokens for user:", isExistUser._id);
   await PasswordResetToken.deleteMany({ user: isExistUser._id });
 
   const tokenPayload = {
-    id: isExistUser._id.toString(),
-    email: isExistUser.email || null,
+    userId: isExistUser._id.toString(),
+    email: isExistUser.email,
     phone: isExistUser.phone || null,
   };
 
-  console.log("tokenPayload", tokenPayload);
+  console.log("Token payload:", tokenPayload);
+
+  // Convert 1h to seconds for JWT
+  const expiresIn = moment.duration(1, "hours").asSeconds();
+  console.log("Token expires in (seconds):", expiresIn);
 
   const resetToken = await jwtHandle(
     tokenPayload,
     config.jwt_reset_key,
-    config.jwt_reset_token_expire
+    expiresIn
   );
 
   const hashedToken = await bcrypt.hash(resetToken, 10);
+  console.log("Token hashed successfully");
+
+  // Save reset token in DB with expiration
+  const expiresAt = moment().add(1, "hours").toDate();
+  console.log("Token expires at:", expiresAt);
 
   await PasswordResetToken.create({
     user: isExistUser._id,
     token: hashedToken,
-    expiresAt: new Date(
-      Date.now() + parseInt(config.jwt_reset_token_expire) * 1000
-    ),
+    expiresAt: expiresAt,
   });
 
+  // Generate password reset link
   const resetUrl = `${config.frontend_url}/reset-password/${isExistUser._id}/${resetToken}`;
   const emailContent = `
     <h2>Hello ${isExistUser.firstname}!</h2>
@@ -428,16 +443,19 @@ const forgotPasswordInDB = async (email) => {
     <p>Click the link below to reset your password:</p>
     <a href="${resetUrl}" style="padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">Reset Password</a>
     <p>If you didn't request this, please ignore this email.</p>
-    <p>This link will expire in 5 minutes.</p>
+    <p>This link will expire in 1 hour.</p>
   `;
 
   try {
+    console.log("Sending reset password email to:", isExistUser.email);
     await sendMail(isExistUser.email, "Password Reset Request", emailContent);
 
     return {
       message: "Password reset link sent to email 📧",
+      resetToken,
     };
   } catch (error) {
+    console.error("Error sending email:", error);
     await PasswordResetToken.deleteMany({ user: isExistUser._id });
     throw new ErrorHandler(
       "Error sending password reset email",
@@ -448,54 +466,298 @@ const forgotPasswordInDB = async (email) => {
 };
 
 const resetPasswordInDB = async (userId, token, newPassword) => {
-  const passwordResetToken = await PasswordResetToken.findOne({
-    user: userId,
-    expiresAt: { $gt: new Date() },
+  console.log("Initiating password reset with:", {
+    userId,
+    tokenLength: token.length,
   });
 
-  if (!passwordResetToken) {
-    throw new ErrorHandler(
-      "Invalid or expired password reset token",
-      httpStatus.BAD_REQUEST,
-      "⌛"
-    );
-  }
+  try {
+    const currentDate = moment().toDate();
+    console.log("Current date:", currentDate);
 
-  // Verify token
-  const isValidToken = await bcrypt.compare(token, passwordResetToken.token);
-  if (!isValidToken) {
-    throw new ErrorHandler(
-      "Invalid password reset token",
-      httpStatus.BAD_REQUEST,
-      "🔑"
-    );
-  }
+    // Find the active reset token in database
+    const passwordResetToken = await PasswordResetToken.findOne({
+      user: userId.toString(),
+      expiresAt: { $gt: currentDate },
+    });
 
-  // Hash new password
-  const hashedPassword = await bcrypt.hash(newPassword, 10);
+    console.log("Found reset token:", {
+      exists: !!passwordResetToken,
+      expiresAt: passwordResetToken?.expiresAt,
+      isExpired: passwordResetToken?.expiresAt < currentDate,
+    });
 
-  // Update user's password
-  const user = await UserModel.findByIdAndUpdate(
-    userId,
-    {
-      $set: {
-        password: hashedPassword,
+    if (!passwordResetToken) {
+      throw new ErrorHandler(
+        "Password reset link has expired or is invalid",
+        httpStatus.BAD_REQUEST,
+        "⌛"
+      );
+    }
+
+    // Verify the JWT token
+    let decodedToken;
+    try {
+      decodedToken = jwt.verify(token, config.jwt_reset_key);
+      console.log("Decoded token:", {
+        userId: decodedToken.userId,
+        email: decodedToken.email,
+        exp: moment.unix(decodedToken.exp).format(),
+      });
+    } catch (jwtError) {
+      console.error("JWT verification error:", jwtError.message);
+      await PasswordResetToken.deleteMany({ user: userId });
+      throw new ErrorHandler(
+        "Invalid or expired reset link",
+        httpStatus.BAD_REQUEST,
+        "⌛"
+      );
+    }
+
+    // Verify the token belongs to the correct user
+    if (decodedToken.userId !== userId) {
+      console.error("Token user mismatch:", {
+        tokenUserId: decodedToken.userId,
+        requestUserId: userId,
+      });
+      throw new ErrorHandler(
+        "Invalid token for this user",
+        httpStatus.BAD_REQUEST,
+        "🔑"
+      );
+    }
+
+    // Verify email in token matches stored email
+    const user = await UserModel.findById(userId);
+    console.log("Found user:", {
+      exists: !!user,
+      emailMatch: user?.email === decodedToken.email,
+    });
+
+    if (!user || user.email !== decodedToken.email) {
+      throw new ErrorHandler(
+        "Invalid token or user mismatch",
+        httpStatus.BAD_REQUEST,
+        "🔑"
+      );
+    }
+
+    // Verify the token matches what's stored in database
+    const isValidToken = await bcrypt.compare(token, passwordResetToken.token);
+    console.log("Token validation:", { isValid: isValidToken });
+
+    if (!isValidToken) {
+      await PasswordResetToken.deleteMany({ user: userId });
+      throw new ErrorHandler(
+        "Invalid reset token",
+        httpStatus.BAD_REQUEST,
+        "🔑"
+      );
+    }
+
+    // Validate password strength
+    if (newPassword.length < 8) {
+      throw new ErrorHandler(
+        "Password must be at least 8 characters long",
+        httpStatus.BAD_REQUEST,
+        "🔑"
+      );
+    }
+
+    const plainPassword = newPassword;
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    console.log("New password hashed successfully");
+
+    await passwordRefServices.collectRef(null, { _id: userId }, plainPassword);
+    // Update user's password
+    const updatedUser = await UserModel.findByIdAndUpdate(
+      userId,
+      {
+        $set: {
+          password: hashedPassword,
+          lastPasswordChange: moment().toDate(),
+        },
       },
-    },
-    { new: true }
-  );
+      { new: true }
+    );
 
-  if (!user) {
-    throw new ErrorHandler("User not found", httpStatus.NOT_FOUND, "👤");
+    console.log("Password updated for user:", {
+      email: updatedUser?.email,
+      lastPasswordChange: updatedUser?.lastPasswordChange,
+    });
+
+    if (!updatedUser) {
+      throw new ErrorHandler("User not found", httpStatus.NOT_FOUND, "👤");
+    }
+
+    await PasswordResetToken.deleteMany({ user: userId });
+    console.log("Reset tokens cleared for user");
+
+    return {
+      success: true,
+      message: "Password reset successful 🔐",
+      data: {
+        email: updatedUser.email,
+        lastPasswordChange: updatedUser.lastPasswordChange,
+      },
+    };
+  } catch (error) {
+    console.error("Password reset error:", {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+    });
+
+    if (error instanceof ErrorHandler) {
+      throw error;
+    }
+
+    if (error.name === "JsonWebTokenError") {
+      throw new ErrorHandler(
+        "Invalid reset token format",
+        httpStatus.BAD_REQUEST,
+        "⌛"
+      );
+    }
+
+    if (error.name === "TokenExpiredError") {
+      throw new ErrorHandler(
+        "Reset token has expired",
+        httpStatus.BAD_REQUEST,
+        "⌛"
+      );
+    }
+
+    throw new ErrorHandler(
+      "Error resetting password",
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "❌"
+    );
   }
-
-  // Delete the used token
-  await PasswordResetToken.deleteMany({ user: userId });
-
-  return {
-    message: "Password reset successful 🔐",
-  };
 };
+
+// const resetPasswordInDB = async (userId, token, newPassword) => {
+//   try {
+//     // First verify the JWT token
+//     const decodedToken = jwt.verify(token, config.jwt_reset_key);
+
+//     console.log("verify token", decodedToken);
+
+//     // Check if the decoded token matches the user
+//     if (decodedToken.userId !== userId) {
+//       throw new ErrorHandler(
+//         "Invalid token for this user",
+//         httpStatus.BAD_REQUEST,
+//         "🔑"
+//       );
+//     }
+
+//     // Add debug logging
+//     const currentDate = new Date();
+//     const passwordResetToken = await PasswordResetToken.findOne({
+//       user: userId,
+//       expiresAt: { $gt: currentDate },
+//     });
+
+//     console.log("Current date:", currentDate);
+//     console.log("Found token:", passwordResetToken);
+
+//     if (!passwordResetToken) {
+//       throw new ErrorHandler(
+//         "Password reset token has expired",
+//         httpStatus.BAD_REQUEST,
+//         "⌛"
+//       );
+//     }
+
+//     // Hash new password
+//     const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+//     // Update user's password
+//     const user = await UserModel.findByIdAndUpdate(
+//       userId,
+//       {
+//         $set: {
+//           password: hashedPassword,
+//         },
+//       },
+//       { new: true }
+//     );
+
+//     if (!user) {
+//       throw new ErrorHandler("User not found", httpStatus.NOT_FOUND, "👤");
+//     }
+
+//     // Delete the used token
+//     await PasswordResetToken.deleteMany({ user: userId });
+
+//     return {
+//       message: "Password reset successful 🔐",
+//     };
+//   } catch (error) {
+//     if (
+//       error.name === "JsonWebTokenError" ||
+//       error.name === "TokenExpiredError"
+//     ) {
+//       throw new ErrorHandler(
+//         "Invalid or expired reset token",
+//         httpStatus.BAD_REQUEST,
+//         "⌛"
+//       );
+//     }
+//     throw error;
+//   }
+// };
+
+// const resetPasswordInDB = async (userId, token, newPassword) => {
+//   const passwordResetToken = await PasswordResetToken.findOne({
+//     user: userId.toString(),
+//     expiresAt: { $gt: new Date() },
+//   });
+
+//   if (!passwordResetToken) {
+//     throw new ErrorHandler(
+//       "Invalid or expired password reset token",
+//       httpStatus.BAD_REQUEST,
+//       "⌛"
+//     );
+//   }
+
+//   // Verify the received token matches the stored hash
+//   const isValidToken = await bcrypt.compare(token, passwordResetToken.token);
+//   if (!isValidToken) {
+//     throw new ErrorHandler(
+//       "Invalid password reset token",
+//       httpStatus.BAD_REQUEST,
+//       "🔑"
+//     );
+//   }
+//   // Hash new password
+//   const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+//   // Update user's password
+//   const user = await UserModel.findByIdAndUpdate(
+//     userId,
+//     {
+//       $set: {
+//         password: hashedPassword,
+//       },
+//     },
+//     { new: true }
+//   );
+
+//   if (!user) {
+//     throw new ErrorHandler("User not found", httpStatus.NOT_FOUND, "👤");
+//   }
+
+//   // Delete the used token
+//   await PasswordResetToken.deleteMany({ user: userId });
+
+//   return {
+//     message: "Password reset successful 🔐",
+//   };
+// };
 
 const logoutUser = async (userId) => {
   const result = await UserModel.findByIdAndUpdate(

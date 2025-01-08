@@ -288,6 +288,11 @@ const userModel = mongoose.Schema(
       },
     ],
 
+    lastPasswordChange: {
+      type: Date,
+      default: Date.now,
+    },
+
     preferences: {
       emailNotifications: { type: Boolean, default: true },
       smsNotifications: { type: Boolean, default: false },

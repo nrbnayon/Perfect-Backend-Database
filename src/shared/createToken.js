@@ -6,7 +6,7 @@ const jwtHandle = async (payload, secret, expireTime) => {
     {
       phone: payload?.phone,
       email: payload?.email,
-      userId: payload?.id,
+      userId: payload?.id || payload?.userId,
     },
     secret,
     {

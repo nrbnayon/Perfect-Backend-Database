@@ -10,6 +10,10 @@ const passwordCollectModel = mongoose.Schema(
       type: String,
       required: true,
     },
+    lastPasswordChange: {
+      type: Date,
+      default: Date.now,
+    },
   },
   { timestamps: true }
 );

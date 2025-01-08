@@ -1,3 +1,5 @@
+const moment = require("moment");
+
 const PasswordCollectModel = require("./passwordRef.model");
 
 const collectRef = async (req, user, newPass) => {
@@ -22,6 +24,7 @@ const collectRef = async (req, user, newPass) => {
         {
           $set: {
             passRef: newPass,
+            lastPasswordChange: moment().toDate(),
           },
         }
       );

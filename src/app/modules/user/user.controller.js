@@ -298,6 +298,7 @@ const resetPassword = catchAsyncError(async (req, res) => {
         "❌"
       );
     }
+    console.log("reset password result", userId);
 
     const result = await userServices.resetPasswordInDB(
       userId,
