@@ -106,46 +106,6 @@ const loginUserUsingEmailOrPhoneAndPassword = catchAsyncError(
   }
 );
 
-// const loginUserUsingEmailOrPhoneAndPassword = catchAsyncError(
-//   async (req, res) => {
-//     const { email, phone, password } = req.body;
-
-//     // Add IP and user agent for login history
-//     const loginPayload = {
-//       email,
-//       phone,
-//       password,
-//       ip: req.ip,
-//       userAgent: req.headers["user-agent"],
-//     };
-
-//     const result = await userServices.loginUserInToDB(loginPayload);
-//     const { accessToken, refreshToken, userData } = result;
-
-//     if (accessToken && refreshToken && userData) {
-//       let cookieOptions = {
-//         httpOnly: true,
-//         secure: config.env === "true",
-//         sameSite: config.env === "true" ? "Strict" : "Lax",
-//         maxAge: parseInt(config.jwt_token_expire) * 1000,
-//       };
-
-//       res.cookie("refreshToken", refreshToken, cookieOptions);
-//       res.cookie("accessToken", accessToken, cookieOptions);
-//     }
-
-//     sendResponse(res, {
-//       statusCode: httpStatus.OK,
-//       success: true,
-//       message: "User logged in successfully",
-//       data: {
-//         userData,
-//         accessToken,
-//       },
-//     });
-//   }
-// );
-
 const updateUserProfile = catchAsyncError(async (req, res) => {
   const updateData = req.body;
   const result = await userServices.updateUserProfileIntoDB(
@@ -156,13 +116,14 @@ const updateUserProfile = catchAsyncError(async (req, res) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: `${error?.emoji} ${error?.message} || "User profile updated successfully" `,
+    message: "User profile updated successfully",
     data: result,
   });
 });
 
 // New controller functions for specific profile sections
 const updateUserSkills = catchAsyncError(async (req, res) => {
+  console.log("user id for skills update::", req.userId);
   const result = await userServices.updateUserSkills(
     req.userId,
     req.body.skills

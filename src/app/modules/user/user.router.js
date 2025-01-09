@@ -39,39 +39,13 @@ router.put(
   userController.updateUserProfile
 );
 
-// router.post(
-//   "/change-password",
-//   auth(),
-//   validateRequest(JoiUserValidationSchema.changePasswordSchema)
-// );
-
-// router.post(
-//   "/reset-password",
-//   auth(),
-//   validateRequest(JoiUserValidationSchema.resetPasswordSchema)
-// );
-
-// Password reset routes
-router.post(
-  "/forgot-password",
-  validateRequest(JoiUserValidationSchema.forgotPasswordSchema),
-  userController.forgotPassword
-);
-
-router.post(
-  "/reset-password",
-  // auth(),
-  validateRequest(JoiUserValidationSchema.resetPasswordSchema),
-  userController.resetPassword
-);
-
 // Skills and certifications routes
-// router.put(
-//   "/skills",
-//   auth(),
-//   validateRequest(JoiUserValidationSchema.skillSchema),
-//   userController.updateUserSkills
-// );
+router.put(
+  "/skills",
+  auth(),
+  validateRequest(JoiUserValidationSchema.skillSchema),
+  userController.updateUserSkills
+);
 
 // router.put(
 //   "/certifications",
@@ -111,40 +85,31 @@ router.post(
 //   userController.updateUserPreferences
 // );
 
+// router.post(
+//   "/change-password",
+//   auth(),
+//   validateRequest(JoiUserValidationSchema.changePasswordSchema)
+// );
+
+// router.post(
+//   "/reset-password",
+//   auth(),
+//   validateRequest(JoiUserValidationSchema.resetPasswordSchema)
+// );
+
+// Password reset routes
+router.post(
+  "/forgot-password",
+  validateRequest(JoiUserValidationSchema.forgotPasswordSchema),
+  userController.forgotPassword
+);
+
+router.post(
+  "/reset-password",
+  // auth(),
+  validateRequest(JoiUserValidationSchema.resetPasswordSchema),
+  userController.resetPassword
+);
+
 const userRouter = router;
 module.exports = userRouter;
-
-// // user.router.js
-// const express = require("express");
-
-// const validateRequest = require("../../../Middleware/validateRequest");
-// const JoiUserValidationSchema = require("./user.validation");
-// const userController = require("./user.controller");
-// const { authLimiter } = require("../../../Middleware/rateLimit.middleware");
-
-// const router = express.Router();
-
-// router.post(
-//   "/signup",
-//   authLimiter,
-//   validateRequest(JoiUserValidationSchema.userCreateSchema),
-//   userController.createUser
-// );
-
-// router.post(
-//   "/login",
-//   authLimiter,
-//   validateRequest(JoiUserValidationSchema.loginSchema),
-//   userController.loginUserUsingEmailOrPhoneAndPassword
-// );
-
-// router.put(
-//   "/update-profile",
-//   validateRequest(JoiUserValidationSchema.updateUserSchema),
-//   userController.updateUserProfile
-// );
-
-// router.post("/logout", userController.logout);
-
-// const userRouter = router;
-// module.exports = userRouter;
