@@ -53,7 +53,10 @@ const updateCertificationsSchema = Joi.object({
   certifications: Joi.array().items(singleCertificationSchema).required(),
 });
 
-const workExperienceSchema = Joi.object({
+// user.validation.js
+
+// First define the schema for a single work experience
+const singleWorkExperienceSchema = Joi.object({
   company: Joi.string().required().trim(),
   position: Joi.string().required().trim(),
   startDate: Joi.date().max("now").required(),
@@ -67,7 +70,13 @@ const workExperienceSchema = Joi.object({
   location: Joi.string(),
 });
 
-const educationSchema = Joi.object({
+// Schema for work experience array
+const updateWorkExperienceSchema = Joi.object({
+  workExperience: Joi.array().items(singleWorkExperienceSchema).required(),
+});
+
+// Schema for a single education entry
+const singleEducationSchema = Joi.object({
   institution: Joi.string().required().trim(),
   degree: Joi.string().required().trim(),
   field: Joi.string().required().trim(),
@@ -75,6 +84,30 @@ const educationSchema = Joi.object({
   endDate: Joi.date().min(Joi.ref("startDate")),
   grade: Joi.string(),
   activities: Joi.array().items(Joi.string()),
+});
+
+// Schema for education array
+const updateEducationSchema = Joi.object({
+  education: Joi.array().items(singleEducationSchema).required(),
+});
+
+const performanceGoalSchema = Joi.object({
+  description: Joi.string().required(),
+  deadline: Joi.date().min("now"),
+  status: Joi.string().valid("Not Started", "In Progress", "Completed"),
+});
+
+const performanceReviewSchema = Joi.object({
+  reviewDate: Joi.date().max("now").required(),
+  reviewer: Joi.string().required(),
+  ratings: Joi.object({
+    technical: Joi.number().min(1).max(5),
+    soft_skills: Joi.number().min(1).max(5),
+    leadership: Joi.number().min(1).max(5),
+    productivity: Joi.number().min(1).max(5),
+  }),
+  comments: Joi.string(),
+  goals: Joi.array().items(performanceGoalSchema),
 });
 
 const compensationSchema = Joi.object({
@@ -113,25 +146,6 @@ const courseEnrollmentSchema = Joi.object({
     "Completed",
     "On Hold"
   ),
-});
-
-const performanceGoalSchema = Joi.object({
-  description: Joi.string().required(),
-  deadline: Joi.date().min("now"),
-  status: Joi.string().valid("Not Started", "In Progress", "Completed"),
-});
-
-const performanceReviewSchema = Joi.object({
-  reviewDate: Joi.date().max("now").required(),
-  reviewer: Joi.string().required(),
-  ratings: Joi.object({
-    technical: Joi.number().min(1).max(5),
-    soft_skills: Joi.number().min(1).max(5),
-    leadership: Joi.number().min(1).max(5),
-    productivity: Joi.number().min(1).max(5),
-  }),
-  comments: Joi.string(),
-  goals: Joi.array().items(performanceGoalSchema),
 });
 
 const jobPreferencesSchema = Joi.object({
@@ -230,8 +244,8 @@ const userCreateSchema = Joi.object({
   // Additional new fields
   skills: Joi.array().items(updateUserSkillsSchema),
   certifications: Joi.array().items(updateCertificationsSchema),
-  workExperience: Joi.array().items(workExperienceSchema),
-  education: Joi.array().items(educationSchema),
+  workExperience: Joi.array().items(updateWorkExperienceSchema),
+  education: Joi.array().items(updateEducationSchema),
   compensation: compensationSchema,
   benefits: benefitsSchema,
   learningPreferences: learningPreferencesSchema,
@@ -298,8 +312,8 @@ const updateProfileSchema = Joi.object({
   socialLinks: socialLinksSchema,
   skills: Joi.array().items(updateUserSkillsSchema),
   certifications: Joi.array().items(updateCertificationsSchema),
-  workExperience: Joi.array().items(workExperienceSchema),
-  education: Joi.array().items(educationSchema),
+  workExperience: Joi.array().items(updateWorkExperienceSchema),
+  education: Joi.array().items(updateEducationSchema),
   jobPreferences: jobPreferencesSchema,
   emergencyContact: emergencyContactSchema,
   preferences: preferencesSchema,
@@ -349,8 +363,10 @@ const JoiUserValidationSchema = {
   updateUserSkillsSchema,
   updateCertificationsSchema,
   certificationSchema: singleCertificationSchema,
-  workExperienceSchema,
-  educationSchema,
+  updateWorkExperienceSchema,
+  updateEducationSchema,
+  workExperienceSchema: singleWorkExperienceSchema,
+  educationSchema: singleEducationSchema,
   performanceReviewSchema,
   jobPreferencesSchema,
 };

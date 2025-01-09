@@ -55,19 +55,19 @@ router.put(
 );
 
 // // Work and education routes
-// router.put(
-//   "/work-experience",
-//   auth(),
-//   validateRequest(JoiUserValidationSchema.workExperienceSchema),
-//   userController.updateUserWorkExperience
-// );
+router.put(
+  "/work-experience",
+  auth(),
+  validateRequest(JoiUserValidationSchema.updateWorkExperienceSchema),
+  userController.updateUserWorkExperience
+);
 
-// router.put(
-//   "/education",
-//   auth(),
-//   validateRequest(JoiUserValidationSchema.educationSchema),
-//   userController.updateUserEducation
-// );
+router.put(
+  "/education",
+  auth(),
+  validateRequest(JoiUserValidationSchema.updateEducationSchema),
+  userController.updateUserEducation
+);
 
 // Performance review routes
 // router.post(

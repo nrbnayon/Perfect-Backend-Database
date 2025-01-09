@@ -159,7 +159,7 @@ const updateUserWorkExperience = catchAsyncError(async (req, res) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: `${error?.emoji} ${error?.message} || "Work experience updated successfully"`,
+    message: "Work experience updated successfully",
     data: result,
   });
 });
