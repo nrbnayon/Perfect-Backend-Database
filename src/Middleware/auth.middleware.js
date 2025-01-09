@@ -106,16 +106,16 @@ const auth = (...requiredRoles) => {
       req.isAdmin = user.isAdmin;
 
       // Log access (optional)
-      await UserModel.findByIdAndUpdate(user._id, {
-        $push: {
-          loginHistory: {
-            timestamp: new Date(),
-            ipAddress: req.ip,
-            device: req.headers["user-agent"],
-            type: "api_access",
-          },
-        },
-      });
+      // await UserModel.findByIdAndUpdate(user._id, {
+      //   $push: {
+      //     loginHistory: {
+      //       timestamp: new Date(),
+      //       ipAddress: req.ip,
+      //       device: req.headers["user-agent"],
+      //       type: "api_access",
+      //     },
+      //   },
+      // });
 
       next();
     } catch (error) {

@@ -173,7 +173,7 @@ const updateUserEducation = catchAsyncError(async (req, res) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: `${error?.emoji} ${error?.message} || "Education details updated successfully"`,
+    message: "Education details updated successfully",
     data: result,
   });
 });
