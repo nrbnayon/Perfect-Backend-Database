@@ -123,17 +123,16 @@ const updateUserProfile = catchAsyncError(async (req, res) => {
 
 // New controller functions for specific profile sections
 const updateUserSkills = catchAsyncError(async (req, res) => {
-  console.log("user id for skills update::", req.userId);
   const result = await userServices.updateUserSkills(
-    req.userId,
-    req.body.skills
+    req.userId, // This comes from auth middleware
+    req.body.skills // This is the array of skills
   );
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: `${error?.emoji} ${error?.message} || "Skills updated successfully"`,
-    data: result,
+    message: "Skills updated successfully",
+    data: result || null,
   });
 });
 
@@ -146,8 +145,8 @@ const updateUserCertifications = catchAsyncError(async (req, res) => {
   sendResponse(res, {
     statusCode: httpStatus.OK,
     success: true,
-    message: `${error?.emoji} ${error?.message} || "Certifications updated successfully"`,
-    data: result,
+    message: "Certifications updated successfully",
+    data: result || null,
   });
 });
 

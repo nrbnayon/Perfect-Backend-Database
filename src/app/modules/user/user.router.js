@@ -43,16 +43,16 @@ router.put(
 router.put(
   "/skills",
   auth(),
-  validateRequest(JoiUserValidationSchema.skillSchema),
+  validateRequest(JoiUserValidationSchema.updateUserSkillsSchema),
   userController.updateUserSkills
 );
 
-// router.put(
-//   "/certifications",
-//   auth(),
-//   validateRequest(JoiUserValidationSchema.certificationSchema),
-//   userController.updateUserCertifications
-// );
+router.put(
+  "/certifications",
+  auth(),
+  validateRequest(JoiUserValidationSchema.updateCertificationsSchema),
+  userController.updateUserCertifications
+);
 
 // // Work and education routes
 // router.put(

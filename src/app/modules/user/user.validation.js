@@ -25,13 +25,32 @@ const skillSchema = Joi.object({
   yearsOfExperience: Joi.number().min(0).max(50),
 });
 
-const certificationSchema = Joi.object({
+const updateUserSkillsSchema = Joi.object({
+  certifications: Joi.array()
+    .items(
+      Joi.object({
+        name: Joi.string().required().trim(),
+        level: Joi.string()
+          .valid("Beginner", "Intermediate", "Advanced", "Expert")
+          .required(),
+        yearsOfExperience: Joi.number().min(0).max(50),
+      })
+    )
+    .required(),
+});
+
+const singleCertificationSchema = Joi.object({
   name: Joi.string().required().trim(),
   issuedBy: Joi.string().required().trim(),
   issueDate: Joi.date().max("now").required(),
   expiryDate: Joi.date().min(Joi.ref("issueDate")),
   credentialID: Joi.string(),
   credentialURL: Joi.string().uri(),
+});
+
+// Then create the schema for the certifications array
+const updateCertificationsSchema = Joi.object({
+  certifications: Joi.array().items(singleCertificationSchema).required(),
 });
 
 const workExperienceSchema = Joi.object({
@@ -209,8 +228,8 @@ const userCreateSchema = Joi.object({
   employeeStatusUpdateDate: Joi.date().max("now"),
 
   // Additional new fields
-  skills: Joi.array().items(skillSchema),
-  certifications: Joi.array().items(certificationSchema),
+  skills: Joi.array().items(updateUserSkillsSchema),
+  certifications: Joi.array().items(updateCertificationsSchema),
   workExperience: Joi.array().items(workExperienceSchema),
   education: Joi.array().items(educationSchema),
   compensation: compensationSchema,
@@ -277,8 +296,8 @@ const updateProfileSchema = Joi.object({
   bio: Joi.string().trim().max(500),
   website: Joi.string().uri(),
   socialLinks: socialLinksSchema,
-  skills: Joi.array().items(skillSchema),
-  certifications: Joi.array().items(certificationSchema),
+  skills: Joi.array().items(updateUserSkillsSchema),
+  certifications: Joi.array().items(updateCertificationsSchema),
   workExperience: Joi.array().items(workExperienceSchema),
   education: Joi.array().items(educationSchema),
   jobPreferences: jobPreferencesSchema,
@@ -327,7 +346,9 @@ const JoiUserValidationSchema = {
   updateProfileSchema,
   // Expor individual schemas for specific validations
   skillSchema,
-  certificationSchema,
+  updateUserSkillsSchema,
+  updateCertificationsSchema,
+  certificationSchema: singleCertificationSchema,
   workExperienceSchema,
   educationSchema,
   performanceReviewSchema,
