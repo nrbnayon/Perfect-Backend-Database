@@ -1115,7 +1115,6 @@ router.put(
 
 // router.post(
 //   "/reset-password",
-//   auth(),
 //   validateRequest(JoiUserValidationSchema.resetPasswordSchema)
 // );
 
