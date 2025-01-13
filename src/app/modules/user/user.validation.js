@@ -352,13 +352,44 @@ const resetPasswordSchema = Joi.object({
     }),
 });
 
+const changePasswordSchema = Joi.object({
+  currentPassword: Joi.string().required().messages({
+    "string.empty": "Current password is required",
+    "any.required": "Current password is required",
+  }),
+  newPassword: Joi.string()
+    .min(8)
+    .required()
+    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+    .messages({
+      "string.min": "Password must be at least 8 characters long 📏",
+      "string.pattern.base":
+        "Password must contain at least one uppercase letter, one lowercase letter, and one number 🔒",
+    }),
+  confirmPassword: Joi.string()
+    .valid(Joi.ref("newPassword"))
+    .required()
+    .messages({
+      "any.only": "Passwords must match",
+    }),
+});
+
+const searchUserSchema = Joi.object({
+  searchTerm: Joi.string().required().min(1).messages({
+    "string.empty": "Search term is required",
+    "any.required": "Search term is required",
+  }),
+});
+
 const JoiUserValidationSchema = {
   loginSchema,
   userCreateSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  changePasswordSchema,
+  searchUserSchema,
   updateProfileSchema,
-  // Expor individual schemas for specific validations
+  // Expor individual schemas for  validations
   skillSchema,
   updateUserSkillsSchema,
   updateCertificationsSchema,

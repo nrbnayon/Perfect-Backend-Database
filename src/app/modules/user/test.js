@@ -307,7 +307,6 @@ const userModel = mongoose.Schema(
 const UserModel = mongoose.model("User", userModel);
 module.exports = UserModel;
 
-
 //user.validation.js
 
 const Joi = require("joi");
@@ -337,7 +336,21 @@ const skillSchema = Joi.object({
   yearsOfExperience: Joi.number().min(0).max(50),
 });
 
-const certificationSchema = Joi.object({
+const updateUserSkillsSchema = Joi.object({
+  certifications: Joi.array()
+    .items(
+      Joi.object({
+        name: Joi.string().required().trim(),
+        level: Joi.string()
+          .valid("Beginner", "Intermediate", "Advanced", "Expert")
+          .required(),
+        yearsOfExperience: Joi.number().min(0).max(50),
+      })
+    )
+    .required(),
+});
+
+const singleCertificationSchema = Joi.object({
   name: Joi.string().required().trim(),
   issuedBy: Joi.string().required().trim(),
   issueDate: Joi.date().max("now").required(),
@@ -346,7 +359,15 @@ const certificationSchema = Joi.object({
   credentialURL: Joi.string().uri(),
 });
 
-const workExperienceSchema = Joi.object({
+// Then create the schema for the certifications array
+const updateCertificationsSchema = Joi.object({
+  certifications: Joi.array().items(singleCertificationSchema).required(),
+});
+
+// user.validation.js
+
+// First define the schema for a single work experience
+const singleWorkExperienceSchema = Joi.object({
   company: Joi.string().required().trim(),
   position: Joi.string().required().trim(),
   startDate: Joi.date().max("now").required(),
@@ -360,7 +381,13 @@ const workExperienceSchema = Joi.object({
   location: Joi.string(),
 });
 
-const educationSchema = Joi.object({
+// Schema for work experience array
+const updateWorkExperienceSchema = Joi.object({
+  workExperience: Joi.array().items(singleWorkExperienceSchema).required(),
+});
+
+// Schema for a single education entry
+const singleEducationSchema = Joi.object({
   institution: Joi.string().required().trim(),
   degree: Joi.string().required().trim(),
   field: Joi.string().required().trim(),
@@ -370,18 +397,9 @@ const educationSchema = Joi.object({
   activities: Joi.array().items(Joi.string()),
 });
 
-
-const courseEnrollmentSchema = Joi.object({
-  courseId: Joi.string().required(),
-  enrollmentDate: Joi.date().max("now"),
-  completionDate: Joi.date().min(Joi.ref("enrollmentDate")),
-  progress: Joi.number().min(0).max(100).default(0),
-  status: Joi.string().valid(
-    "Not Started",
-    "In Progress",
-    "Completed",
-    "On Hold"
-  ),
+// Schema for education array
+const updateEducationSchema = Joi.object({
+  education: Joi.array().items(singleEducationSchema).required(),
 });
 
 const performanceGoalSchema = Joi.object({
@@ -401,6 +419,44 @@ const performanceReviewSchema = Joi.object({
   }),
   comments: Joi.string(),
   goals: Joi.array().items(performanceGoalSchema),
+});
+
+const compensationSchema = Joi.object({
+  salary: Joi.number().min(0),
+  currency: Joi.string().default("USD"),
+  lastReviewDate: Joi.date().max("now"),
+  nextReviewDate: Joi.date().min("now"),
+});
+
+const benefitsSchema = Joi.object({
+  healthInsurance: Joi.boolean().default(false),
+  lifeInsurance: Joi.boolean().default(false),
+  retirementPlan: Joi.boolean().default(false),
+  paidTimeOff: Joi.number().min(0).max(365),
+});
+
+const learningPreferencesSchema = Joi.object({
+  preferredLanguage: Joi.string().default("English"),
+  learningStyle: Joi.string().valid(
+    "Visual",
+    "Auditory",
+    "Reading/Writing",
+    "Kinesthetic"
+  ),
+  availabilityHours: Joi.number().min(0).max(168).default(40),
+});
+
+const courseEnrollmentSchema = Joi.object({
+  courseId: Joi.string().required(),
+  enrollmentDate: Joi.date().max("now"),
+  completionDate: Joi.date().min(Joi.ref("enrollmentDate")),
+  progress: Joi.number().min(0).max(100).default(0),
+  status: Joi.string().valid(
+    "Not Started",
+    "In Progress",
+    "Completed",
+    "On Hold"
+  ),
 });
 
 const jobPreferencesSchema = Joi.object({
@@ -438,7 +494,106 @@ const preferencesSchema = Joi.object({
   language: Joi.string().default("en"),
 });
 
+// Existing schemas remain unchanged
+const userCreateSchema = Joi.object({
+  firstname: Joi.string().required().messages({
+    "string.empty": "firstname is required",
+    "any.required": "firstname is required",
+  }),
+  lastname: Joi.string().required().messages({
+    "string.empty": "lastname is required",
+    "any.required": "lastname is required",
+  }),
+  username: Joi.string().messages({
+    "string.empty": "username should be string",
+  }),
+  email: Joi.string().required().email().messages({
+    "string.empty": "Email is required",
+    "any.required": "Email is required",
+    "string.email": "Invalid email format",
+  }),
+  password: Joi.string().required().messages({
+    "string.empty": "Password is required",
+    "any.required": "Password is required",
+  }),
+  phone: Joi.string()
+    .trim()
+    .required()
+    .custom((value, helpers) => {
+      if (bangladeshiPhoneNumberRegex.test(value) && value.length === 11) {
+        return value;
+      } else {
+        return helpers.message(
+          "Invalid Bangladeshi phone number format or length"
+        );
+      }
+    }, "Phone Number Validation"),
+  phoneVerify: Joi.boolean(),
+  emailVerify: Joi.boolean(),
+  activeStatus: Joi.boolean(),
+  lastActive: Joi.date().max("now"),
+  socketId: Joi.string(),
+  userStatus: Joi.string().valid("Active", "Block", "Restricted"),
+  role: Joi.string().valid("2001", "1999"),
+  isAdmin: Joi.boolean(),
 
+  // New fields validation
+  gender: Joi.string().valid("Male", "Female", "Other"),
+  dateOfBirth: Joi.date().max("now"),
+  profilePicture: Joi.string(),
+  address: addressSchema,
+  designation: Joi.string().trim(),
+  department: Joi.string().trim(),
+  bio: Joi.string().trim().max(500),
+  joinedDate: Joi.date().max("now"),
+  website: Joi.string().uri(),
+  socialLinks: socialLinksSchema,
+  employeeID: Joi.string(),
+  employeeStatus: Joi.string().valid("Permanent", "Probation", "Contract"),
+  employeeStatusUpdateDate: Joi.date().max("now"),
+
+  // Additional new fields
+  skills: Joi.array().items(updateUserSkillsSchema),
+  certifications: Joi.array().items(updateCertificationsSchema),
+  workExperience: Joi.array().items(updateWorkExperienceSchema),
+  education: Joi.array().items(updateEducationSchema),
+  compensation: compensationSchema,
+  benefits: benefitsSchema,
+  learningPreferences: learningPreferencesSchema,
+  coursesEnrolled: Joi.array().items(courseEnrollmentSchema),
+  performanceReviews: Joi.array().items(performanceReviewSchema),
+  jobPreferences: jobPreferencesSchema,
+  emergencyContact: emergencyContactSchema,
+  loginHistory: Joi.array().items(loginHistorySchema),
+  preferences: preferencesSchema,
+  lastLogin: Joi.date().max("now"),
+}).messages({
+  "object.unknown": "Invalid field provided",
+});
+
+const loginSchema = Joi.object({
+  email: Joi.string().required().messages({
+    "string.empty": "Email is required",
+    "any.required": "Email is required",
+  }),
+
+  phone: Joi.string()
+    .trim()
+    .optional()
+    .custom((value, helpers) => {
+      if (bangladeshiPhoneNumberRegex.test(value) && value.length === 11) {
+        return value;
+      } else {
+        return helpers.message(
+          "Invalid Bangladeshi phone number format or length"
+        );
+      }
+    }, "Phone Number Validation"),
+  password: Joi.string().required().messages({
+    "string.empty": "Password is required",
+    "any.required": "Password is required",
+  }),
+});
 
 // Update profile schema for partial updates
 const updateProfileSchema = Joi.object({
@@ -466,10 +621,10 @@ const updateProfileSchema = Joi.object({
   bio: Joi.string().trim().max(500),
   website: Joi.string().uri(),
   socialLinks: socialLinksSchema,
-  skills: Joi.array().items(skillSchema),
-  certifications: Joi.array().items(certificationSchema),
-  workExperience: Joi.array().items(workExperienceSchema),
-  education: Joi.array().items(educationSchema),
+  skills: Joi.array().items(updateUserSkillsSchema),
+  certifications: Joi.array().items(updateCertificationsSchema),
+  workExperience: Joi.array().items(updateWorkExperienceSchema),
+  education: Joi.array().items(updateEducationSchema),
   jobPreferences: jobPreferencesSchema,
   emergencyContact: emergencyContactSchema,
   preferences: preferencesSchema,
@@ -480,19 +635,54 @@ const updateProfileSchema = Joi.object({
     "object.unknown": "Invalid field provided",
   });
 
+const forgotPasswordSchema = Joi.object({
+  email: Joi.string().required().email().messages({
+    "string.empty": "Email is required",
+    "any.required": "Email is required",
+    "string.email": "Invalid email format",
+  }),
+});
+
+const resetPasswordSchema = Joi.object({
+  userId: Joi.string().required(),
+  token: Joi.string().required(),
+  newPassword: Joi.string()
+    .min(8)
+    .required()
+    .pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
+    .messages({
+      "string.min": "Password must be at least 8 characters long 📏",
+      "string.pattern.base":
+        "Password must contain at least one uppercase letter, one lowercase letter, and one number 🔒",
+    }),
+  confirmPassword: Joi.string()
+    .valid(Joi.ref("newPassword"))
+    .required()
+    .messages({
+      "any.only": "Passwords must match",
+    }),
+});
+
 const JoiUserValidationSchema = {
+  loginSchema,
+  userCreateSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
   updateProfileSchema,
   // Expor individual schemas for specific validations
   skillSchema,
-  certificationSchema,
-  workExperienceSchema,
-  educationSchema,
+  updateUserSkillsSchema,
+  updateCertificationsSchema,
+  certificationSchema: singleCertificationSchema,
+  updateWorkExperienceSchema,
+  updateEducationSchema,
+  workExperienceSchema: singleWorkExperienceSchema,
+  educationSchema: singleEducationSchema,
   performanceReviewSchema,
   jobPreferencesSchema,
 };
 
 module.exports = JoiUserValidationSchema;
-
 
 // user.controller.js
 const httpStatus = require("http-status");
@@ -500,8 +690,6 @@ const userServices = require("./user.services");
 const catchAsyncError = require("../../../ErrorHandler/catchAsyncError");
 const sendResponse = require("../../../shared/sendResponse");
 const config = require("../../../config/config");
-
-
 
 const updateUserProfile = catchAsyncError(async (req, res) => {
   const updateData = req.body;
@@ -671,7 +859,6 @@ const userController = {
   updateUserEducation,
   addPerformanceReview,
   updateUserPreference,
-
 };
 
 module.exports = userController;
@@ -727,7 +914,6 @@ const updateUserProfileIntoDB = async (userId, updateData) => {
 
   return result;
 };
-
 
 // New functions for handling specific profile sections
 const updateUserSkills = async (userId, skills) => {
@@ -821,7 +1007,6 @@ const updateUserPreferences = async (userId, preferences) => {
   return result;
 };
 
-
 const userServices = {
   updateUserProfileIntoDB,
   updateUserSkills,
@@ -834,7 +1019,7 @@ const userServices = {
 
 module.exports = userServices;
 
-
+// user.router.js
 // user.router.js
 const express = require("express");
 const validateRequest = require("../../../Middleware/validateRequest");
@@ -842,8 +1027,32 @@ const JoiUserValidationSchema = require("./user.validation");
 const userController = require("./user.controller");
 const { authLimiter } = require("../../../Middleware/rateLimit.middleware");
 const { auth } = require("../../../Middleware/auth.middleware");
+// const extractUserFromTokenMiddleware = require("../../../Middleware/userVerificationMiddleware");
+
 const router = express.Router();
 
+// Authentication routes
+router.post(
+  "/signup",
+  authLimiter,
+  validateRequest(JoiUserValidationSchema.userCreateSchema),
+  userController.createUser
+);
+
+router.post(
+  "/login",
+  authLimiter,
+  validateRequest(JoiUserValidationSchema.loginSchema),
+  userController.loginUserUsingEmailOrPhoneAndPassword
+);
+
+router.post("/logout", auth(), userController.logout);
+// router.post("/logout", extractUserFromTokenMiddleware, userController.logout);
+
+router.get("/online-users", auth(), userController.getOnlineUsersList);
+
+// Profile routes
+router.get("/profile", auth(), userController.myProfileUsingToken);
 
 router.put(
   "/profile-update",
@@ -852,58 +1061,77 @@ router.put(
   userController.updateUserProfile
 );
 
-router.post(
-  "/change-password",
-  auth(),
-  validateRequest(JoiUserValidationSchema.changePasswordSchema)
-);
-
 // Skills and certifications routes
 router.put(
   "/skills",
   auth(),
-  validateRequest(JoiUserValidationSchema.skillSchema),
+  validateRequest(JoiUserValidationSchema.updateUserSkillsSchema),
   userController.updateUserSkills
 );
 
 router.put(
   "/certifications",
   auth(),
-  validateRequest(JoiUserValidationSchema.certificationSchema),
+  validateRequest(JoiUserValidationSchema.updateCertificationsSchema),
   userController.updateUserCertifications
 );
 
-// Work and education routes
+// // Work and education routes
 router.put(
   "/work-experience",
   auth(),
-  validateRequest(JoiUserValidationSchema.workExperienceSchema),
+  validateRequest(JoiUserValidationSchema.updateWorkExperienceSchema),
   userController.updateUserWorkExperience
 );
 
 router.put(
   "/education",
   auth(),
-  validateRequest(JoiUserValidationSchema.educationSchema),
+  validateRequest(JoiUserValidationSchema.updateEducationSchema),
   userController.updateUserEducation
 );
 
-Performance review routes
+// Performance review routes
+// router.post(
+//   "/performance-review",
+//   auth(),
+//   validateRequest(JoiUserValidationSchema.performanceReviewSchema),
+//   userController.addPerformanceReview
+// );
+
+// // Preferences routes
+// router.put(
+//   "/preferences",
+//   auth(),
+//   validateRequest(JoiUserValidationSchema.preferencesSchema),
+//   userController.updateUserPreferences
+// );
+
+// router.post(
+//   "/change-password",
+//   auth(),
+//   validateRequest(JoiUserValidationSchema.changePasswordSchema)
+// );
+
+// router.post(
+//   "/reset-password",
+//   auth(),
+//   validateRequest(JoiUserValidationSchema.resetPasswordSchema)
+// );
+
+// Password reset routes
 router.post(
-  "/performance-review",
-  auth(),
-  validateRequest(JoiUserValidationSchema.performanceReviewSchema),
-  userController.addPerformanceReview
+  "/forgot-password",
+  validateRequest(JoiUserValidationSchema.forgotPasswordSchema),
+  userController.forgotPassword
 );
 
-// Preferences routes
-router.put(
-  "/preferences",
-  auth(),
-  validateRequest(JoiUserValidationSchema.preferencesSchema),
-  userController.updateUserPreferences
+router.post(
+  "/reset-password",
+  // auth(),
+  validateRequest(JoiUserValidationSchema.resetPasswordSchema),
+  userController.resetPassword
 );
 
 const userRouter = router;
 module.exports = userRouter;
-
