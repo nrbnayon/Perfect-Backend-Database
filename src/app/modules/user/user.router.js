@@ -70,12 +70,12 @@ router.put(
 );
 
 // Performance review routes
-// router.post(
-//   "/performance-review",
-//   auth(),
-//   validateRequest(JoiUserValidationSchema.performanceReviewSchema),
-//   userController.addPerformanceReview
-// );
+router.post(
+  "/performance-review",
+  auth(),
+  validateRequest(JoiUserValidationSchema.performanceReviewSchema),
+  userController.addPerformanceReview
+);
 
 // // Preferences routes
 // router.put(
