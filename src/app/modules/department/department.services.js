@@ -20,7 +20,7 @@ const createIndividualCategoriesIntoDB = async (payload) => {
   });
   if (isExist) {
     throw new ErrorHandler(
-      `${isExist.categoryName} this category already exist!`,
+      `${isExist.categoryName} this  already exist!`,
       httpStatus.CONFLICT
     );
   }
