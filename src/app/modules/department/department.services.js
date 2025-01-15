@@ -25,7 +25,7 @@ const createIndividualCategoriesIntoDB = async (payload) => {
     );
   }
 
-  const categories = new CategoriesModel(payload);
+  const dptr = new CategoriesModel(payload);
   const newCategory = await categories.save();
 
   return newCategory;
