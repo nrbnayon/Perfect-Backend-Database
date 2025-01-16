@@ -14,7 +14,7 @@ const { sortingHelper } = require("../../../Helper/sortingHelper");
 const { processFilters } = require("../../../Helper/filterProcessor");
 
 const createIndividualCategoriesIntoDB = async (payload) => {
-  const departmentSlug = generateSlug(payload?.categoryName);
+  const categorySlug = generateSlug(payload?.categoryName);
   const isExist = await CategoriesModel.findOne({
     slug: categorySlug,
   });
