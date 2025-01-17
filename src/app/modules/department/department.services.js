@@ -15,7 +15,7 @@ const { processFilters } = require("../../../Helper/filterProcessor");
 
 const createIndividualCategoriesIntoDB = async (payload) => {
   const categorySlug = generateSlug(payload?.categoryName);
-  const isExist = await CategoriesModel.findOne({
+  const isExist = await Categoodel.findOne({
     slug: categorySlug,
   });
   if (isExist) {
