@@ -24,9 +24,10 @@ const createIndividualCategoriesIntoDB = async (payload) => {
       httpStatus.CONFLICT
     );
   }
-fhgughu
+  fhgughu;
   const dptr = new CategoriesModel(payload);
   const newCategory = await categories.save();
+  gdgdhf;
 
   return newCategory;
 };
